@@ -15,13 +15,14 @@ var game = new Phaser.Game(800, 600, Phaser.Canvas, 'cube-party', { create });
 
 
 function setText(text) {
-  text.setText("- You have clicked -\n" + store.getState() + " times !");
+  text.setText("- You have clicked -\n" + store.getState().appstate + " times !");
 }
 
 function create() {
   let text = game.add.text(game.world.centerX,game.world.centerY, "hello",style);
   text.anchor.set(0.5);
   text.inputEnabled = true;
+  text.input.enableDrag();
 
   store.subscribe(setText.bind(null,text));
 
