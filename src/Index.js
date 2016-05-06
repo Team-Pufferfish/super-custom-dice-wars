@@ -139,12 +139,13 @@ function create() {
     dice.events.onDragStop.add(onDragStop, this);
 
   }
-  //Test Die
-  var startPos = getRandomInBounds(0,screenY-cupHeight,cupWidth,cupHeight);
-  var x = ((startPos[0] - diceDim) < 0) ?  0 :startPos[0]- diceDim;
-  var y = ((startPos[1] - diceDim) < screenY-cupHeight) ? screenY-cupHeight : startPos[1]- diceDim ;
-  console.log("sx: "+startPos[0]+" X:" + x + " sx: "+startPos[1]+" Y:" +y+ " S:");
+  //End Turn Button
+  endTurn = game.add.text(game.world.centerX-10,screenY - cupHeight/2, "End Turn",style);
+  endTurn.inputEnabled = true;
 
+  endTurn.events.onInputDown.add(() => {
+    endPlayerTurn()
+  });
 }
 
 function endPlayerTurn(){
@@ -156,9 +157,9 @@ function endPlayerTurn(){
 
 function toggleDieInput(player,set){
   if(player === 0)
-    redDie.input.draggable = set;
+    redDiceInHand.forEach(die  => die.input.draggable = set);
   else {
-    blueDie.input.draggable = set;
+    blueDieInHand.forEach(die => die.input.draggable = set);
   }
 }
 
