@@ -10,7 +10,13 @@ export const DiceConst = {
   MovementVariety: {
     Alternating: "alternating",
     Simultaneous: "simultaneous" //default
-  }
+  },
+  PlacementVariety: {
+    HomeRow: "homerow",
+    Midline: "midline",
+    BehindFront: "behindfirst",
+    BehindBack: "behindback"
+  },
 }
 
 export const CombatConst = {

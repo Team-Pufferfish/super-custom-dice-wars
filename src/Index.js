@@ -1,7 +1,7 @@
 import * as actions from './actions';
 import { createStore, compose } from 'redux';
 import  appstate  from './reducers';
-import { DiceConst, CombatConst } from './optionConstants'
+import { DiceConst, CombatConst } from './Constants'
 global.PIXI = require('../node_modules/phaser-shim/dist/pixi');
 global.Phaser = require('../node_modules/phaser-shim/dist/phaser');
 
@@ -32,7 +32,6 @@ function setInitialOptions() {
   store.dispatch(actions.setBoardSize(6,4));
   store.dispatch(actions.setDiceCount(4));
   store.dispatch(actions.setBonusDiceCount(2));
-
 }
 
 function create() {
