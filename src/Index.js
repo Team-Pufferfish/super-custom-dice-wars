@@ -1,14 +1,8 @@
-import { add, remove } from './actions';
-import { createStore, compose } from 'redux';
-import  appstate  from './reducers';
 import {getRandomInBounds, rollDie} from './utility.js'
 
 global.PIXI = require('../node_modules/phaser-shim/dist/pixi');
 global.Phaser = require('../node_modules/phaser-shim/dist/phaser');
 
-let store = createStore(appstate,0,
-  window.devToolsExtension ? window.devToolsExtension() : f => f
-);
 
 var style = { font: "65px Arial", fill: "#ff0044", align: "center" };
 
@@ -33,6 +27,7 @@ function preload(){
   game.load.image('tileNeutral','dist/images/tileNeutral.png');
   //dice
   game.load.spritesheet('redDice',"dist/images/DieRed.png",85,85,6);
+  game.load.spritesheet('blueDice',"dist/images/DieBlue.png",85,85,6);
   //targets
   game.load.image('redTargets','dist/images/tileRedMove.png');
   game.load.image('blueTargets','dist/images/tileRedBlue.png');
@@ -48,23 +43,33 @@ var boardWidth = 6;
 var tileDim = 127;
 var diceDim = 85;
 
+var playerDiceCount = 4;
+var playerBonusDiceCount = 2;
+
 //groups
 var tiles;
 var redTargets;
 var blueTargets;
-var redDice;
-var redDie;
+var redDiceInHand;
+var blueDiceInHand;
+
+
 
 function create() {
+
+
+
+
   background = game.add.image(0,0,'background');
   cupRed = game.add.image(0,screenY-cupHeight,'cups');
-  cupBlue = game.add.image(screenX - cupWidth, screenY-cupHeight,"cups")
+  cupBlue = game.add.image(screenX - cupWidth, screenY-cupHeight,"cups");
 
   //groups
   tiles = game.add.group();
   redTargets = game.add.group();
   blueTargets = game.add.group();
-  redDice = game.add.group();
+  redDiceInHand = game.add.group();
+  blueDiceInHand = game.add.group();
 
   //draw tiles
   var col,row;
@@ -94,17 +99,48 @@ function create() {
   redTargets.alpha = 0.0;
   blueTargets.alpha = 0.0;
 
+  //add dice to hands
+  var i = 0;
+
+  //make redDice
+  for(i; i < playerDiceCount; i++)
+  {
+    let pos = [cupRed.x + i * 86,cupRed.y,cupWidth,cupHeight];
+    let diceValue = rollDie();
+    var dice = redDiceInHand.create(pos[0],pos[1],"redDice",diceValue - 1);
+
+    dice.value = diceValue;
+    dice.uniqueRef = "redDice"+i;
+    dice.inputEnabled = true;
+    dice.input.enableDrag();
+    dice.events.onDragStart.add(onDragStart, this);
+    dice.events.onDragStop.add(onDragStop, this);
+
+  }
+  //make blueDice
+  i = 0;
+
+  //make redDice
+  for(i; i < playerDiceCount; i++)
+  {
+    let pos = [cupBlue.x + i * 86,cupBlue.y];
+    let diceValue = rollDie();
+    var dice = blueDiceInHand.create(pos[0],pos[1],"blueDice",diceValue - 1);
+
+    dice.value = diceValue;
+    dice.uniqueRef = "blueDice"+i;
+    dice.inputEnabled = true;
+    dice.input.enableDrag();
+    dice.events.onDragStart.add(onDragStart, this);
+    dice.events.onDragStop.add(onDragStop, this);
+
+  }
   //Test Die
   var startPos = getRandomInBounds(0,screenY-cupHeight,cupWidth,cupHeight);
   var x = ((startPos[0] - diceDim) < 0) ?  0 :startPos[0]- diceDim;
   var y = ((startPos[1] - diceDim) < screenY-cupHeight) ? screenY-cupHeight : startPos[1]- diceDim ;
-  redDie = game.add.sprite(x,y,'redDice',0);
   console.log("sx: "+startPos[0]+" X:" + x + " sx: "+startPos[1]+" Y:" +y+ " S:");
-  redDie.inputEnabled = true;
-  redDie.input.enableDrag();
 
-  redDie.events.onDragStart.add(onDragStart, this);
-  redDie.events.onDragStop.add(onDragStop, this);
 }
 
 var lastDragStartX;
