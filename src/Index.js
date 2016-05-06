@@ -10,7 +10,7 @@ let store = createStore(appstate,0,
   window.devToolsExtension ? window.devToolsExtension() : f => f
 );
 
-var style = { font: "65px Arial", fill: "#ff0044", align: "center" };
+var style = { font: "20px Arial", fill: "#ff0044", align: "center" };
 
 var screenX = 1024;
 var screenY = 768;
@@ -33,6 +33,7 @@ function preload(){
   game.load.image('tileNeutral','dist/images/tileNeutral.png');
   //dice
   game.load.spritesheet('redDice',"dist/images/DieRed.png",85,85,6);
+  game.load.spritesheet('blueDice',"dist/images/DieBlue.png",85,85,6);
   //targets
   game.load.image('redTargets','dist/images/tileRedMove.png');
   game.load.image('blueTargets','dist/images/tileRedBlue.png');
@@ -47,13 +48,20 @@ var boardHeight = 4;
 var boardWidth = 6;
 var tileDim = 127;
 var diceDim = 85;
+var endTurn;
 
 //groups
 var tiles;
 var redTargets;
 var blueTargets;
 var redDice;
+var blueDice;
+
 var redDie;
+var blueDie;
+
+//simpleGameState
+var player = 0;
 
 function create() {
   background = game.add.image(0,0,'background');
@@ -65,6 +73,7 @@ function create() {
   redTargets = game.add.group();
   blueTargets = game.add.group();
   redDice = game.add.group();
+  blueDice = game.add.group();
 
   //draw tiles
   var col,row;
@@ -84,10 +93,12 @@ function create() {
         spriteimage = "tileBlue";
       //console.log("X:" + spriteX + " Y:" +spriteY+ " S:" + spriteimage);
       tiles.create(spriteX,spriteY,spriteimage);
-      if (col !== boardWidth-1)
-        redTargets.create(spriteX,spriteY,"redTargets");
-      if(col !== 0)
+      if (col !== boardWidth-1){
+        var temp = redTargets.create(spriteX,spriteY,"redTargets");
+        temp.uniqueRef = "T" + col + row;
+      }if(col !== 0){
         blueTargets.create(spriteX,spriteY,"blueTargets");
+      }
     }
   }
 
@@ -105,6 +116,42 @@ function create() {
 
   redDie.events.onDragStart.add(onDragStart, this);
   redDie.events.onDragStop.add(onDragStop, this);
+
+  //BLUE dietest
+  startPos = getRandomInBounds(cupBlue.x,cupBlue.y,cupWidth,cupHeight);
+  x = ((startPos[0] - diceDim) < 0) ?  0 :startPos[0]- diceDim;
+  y = ((startPos[1] - diceDim) < screenY-cupHeight) ? screenY-cupHeight : startPos[1]- diceDim ;
+  blueDie = game.add.sprite(x,y,'blueDice',3);
+  console.log("sx: "+startPos[0]+" X:" + x + " sx: "+startPos[1]+" Y:" +y+ " S:");
+  blueDie.inputEnabled = true;
+  blueDie.input.enableDrag();
+
+  blueDie.events.onDragStart.add(onDragStart, this);
+  blueDie.events.onDragStop.add(onDragStop, this);
+  blueDie.input.draggable = false;//disabled by default
+
+  //End Turn Button
+  endTurn = game.add.text(game.world.centerX-10,screenY - cupHeight/2, "End Turn",style);
+  endTurn.inputEnabled = true;
+
+  endTurn.events.onInputDown.add(() => {
+    endPlayerTurn()
+  });
+}
+
+function endPlayerTurn(){
+  toggleDieInput(player,false);
+  player++;
+  player = player % 2;
+  toggleDieInput(player,true);
+}
+
+function toggleDieInput(player,set){
+  if(player === 0)
+    redDie.input.draggable = set;
+  else {
+    blueDie.input.draggable = set;
+  }
 }
 
 var lastDragStartX;
@@ -113,11 +160,16 @@ var lastDragStartY;
 function onDragStart(sprite, pointer) {
     lastDragStartX = sprite.x;
     lastDragStartY = sprite.y;
-    redTargets.alpha = 0.5;
+    if (player === 0){
+      redTargets.alpha = 0.5;
+    }else {
+      blueTargets.alpha = 0.5;
+    }
 }
 
 function onDragStop(sprite, pointer) {
   redTargets.alpha = 0.0;
+  blueTargets.alpha = 0.0;
 
   if(overLap(sprite.x,sprite.y,diceDim,diceDim,screenX/2 - ((boardWidth)/2 * tileDim),screenY/2 - ((boardHeight/2) * tileDim) -100,screenX/2 - ((boardWidth)/2 * tileDim) + (boardWidth * tileDim),screenY/2 - ((boardHeight/2) * tileDim) + (boardHeight * tileDim) -100)){  //draw tiles
     var col,row;
@@ -128,16 +180,24 @@ function onDragStop(sprite, pointer) {
         if(overLap(sprite.x,sprite.y,diceDim,diceDim,spriteX,spriteY,tileDim,tileDim)){
           sprite.x = spriteX + (tileDim-diceDim)/2;
           sprite.y = spriteY + (tileDim-diceDim)/2;
+          sprite.col = col;
+          sprite.row = row;
           return;
         }
       }
     }
 
   }
-
-  if(!overLap(sprite.x,sprite.y,diceDim,diceDim,0,screenY-cupHeight,cupWidth,screenY)){
+  if (player == 0){
+  if(!overLap(sprite.x,sprite.y,diceDim,diceDim,cupRed.x,cupRed.y,cupWidth,cupHeight)){
       sprite.x = lastDragStartX;
       sprite.y = lastDragStartY;
+  }
+  }else{
+    if(!overLap(sprite.x,sprite.y,diceDim,diceDim,cupBlue.x,cupBlue.y,cupWidth,cupHeight)){
+        sprite.x = lastDragStartX;
+        sprite.y = lastDragStartY;
+    }
   }
 }
 
