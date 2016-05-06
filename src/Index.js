@@ -16,6 +16,7 @@ var game = new Phaser.Game(800, 600, Phaser.Canvas, 'cube-party', { create });
 
 function setText(text) {
   text.setText("- You have clicked -\n" + store.getState().appstate + " times !");
+  game.add.text(game.world.centerX,game.world.centerY, "hello",style);
 }
 
 function create() {

@@ -42,3 +42,8 @@ export const setCombatTradingVariety = (variety) => ({
   type: 'SET_COMBAT_TRADING_VARIETY',
   variety
 });
+
+export const setCombatTradingResult = (result) => ({
+  type: 'SET_COMBAT_TRADING_RESULT',
+  result
+});

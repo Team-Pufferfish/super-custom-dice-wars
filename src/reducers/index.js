@@ -47,7 +47,11 @@ const combatOptions = (state = {}, action) => {
       case 'SET_COMBAT_TRADING_VARIETY':
         return Object.assign({}, state, {
           TradingVariety: state.variety
-        })
+        });
+      case 'SET_COMBAT_TRADING_RESULT':
+        return Object.assign({}, state, {
+          TradingResult: state.result
+        }); 
       default:
         return state;
   }
