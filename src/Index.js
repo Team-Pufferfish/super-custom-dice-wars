@@ -20,8 +20,7 @@ function setText(text) {
 }
 
 function preload() {
-
-game.load.spritesheet('blueDice', 'dist/images/DieBlue.png', 85,85,6);
+  game.load.spritesheet('blueDice', 'dist/images/DieBlue.png', 85,85,6);
 }
 
 function setInitialOptions() {
@@ -31,13 +30,17 @@ function setInitialOptions() {
   store.dispatch(actions.setCombatTradingVariety(CombatConst.TradingVariety.GT));
   store.dispatch(actions.setCombatTradingResult(CombatConst.TradingResult.Subtract));
   store.dispatch(actions.setBoardSize(6,4));
+  store.dispatch(actions.setDiceCount(4));
+  store.dispatch(actions.setBonusDiceCount(2));
+
 }
 
 function create() {
+  setInitialOptions();
   let text = game.add.text(game.world.centerX,game.world.centerY, "hello",style);
   let dice = game.add.sprite(20,20,'blueDice',0);
   store.subscribe(setText.bind(null,dice));
-  setInitialOptions();
+
 
   text.anchor.set(0.5);
   text.inputEnabled = true;
