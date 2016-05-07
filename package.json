@@ -74,6 +74,7 @@
     "postcss-nested": "^1.0.0",
     "postcss-simple-extend": "^1.0.0",
     "postcss-simple-vars": "^1.2.0",
+    "random-js": "^1.0.8",
     "rimraf": "^2.5.2",
     "run-sequence": "^1.1.5",
     "tap-nyan": "0.0.2",
