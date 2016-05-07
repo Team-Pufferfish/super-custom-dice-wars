@@ -123,10 +123,8 @@ function reroll(player){
     }
 
 
-  var grouped = _.chain(playerHand.children)
-  .groupBy(x => x.value)
-  .filter(x => x.length > 1)
-  .value();
+  var grouped = _.groupBy(playerHand.children,x => x.value)
+  var filtered = _.filter(grouped, x => x.length > 1)
   });
 
 }
