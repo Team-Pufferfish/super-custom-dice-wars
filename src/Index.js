@@ -8,6 +8,16 @@ var settingsConstants = {
     reinforceLineOne: "First free spot behind center line",
     reinforceLineAny: "Any free spot behind center line",
     homeRowOnly: "Only in base"
+  },
+  movementStrategy: {
+    afterPlayer: "Moves current player's dice after their turn",
+    afterTurn: "Moves both player's dice after each turn",
+    afterRound: "Moves dice after each round"
+  },
+  rollDiceStrategy: {
+    afterTurn: "Roll dice after each player's turn",
+    afterRound: "Roll both player's dice after each round",
+    beforeTurn: "Roll dice before each player's turn"
   }
 }
 
@@ -64,7 +74,9 @@ var diceDim = 85;
 
 var endTurn;
 var placementStrategy = settingsConstants.placementStrategy.reinforceLineAny;
-var playerDiceCount = 4;
+var movementStrategy = settingsConstants.movementStrategy.afterRound;
+var rollDiceStrategy = settingsConstants.rollDiceStrategy.afterRound;
+var playerDiceCount = 6;
 var playerBonusDiceCount = 2;
 
 //groups
@@ -88,9 +100,9 @@ function reroll(player){
     let diceValue = rollDie();
 
     var texture = die.key;
-
+  //  jumpDieToCup(die,player);
     die.value = diceValue;
-    die.loadTexture(texture,diceValue - 1);
+    die.frame = diceValue - 1;
   });
 
 }
@@ -293,10 +305,36 @@ function create() {
 
 function endPlayerTurn(){
   toggleDieInput(player,false);
-  endTurn.inputEnabled = false;
+
   endTurn.setStyle(styleWhite);
-  runMoves();
-  game.time.events.add(Phaser.Timer.SECOND * 0.75, switchPlayer, this);
+
+  if (rollDiceStrategy === settingsConstants.rollDiceStrategy.beforeTurn){
+    if (player === 0) reroll(1);
+    if (player === 1) reroll(0);
+  }
+
+  if (rollDiceStrategy === settingsConstants.rollDiceStrategy.afterTurn) {
+    if (player === 1) reroll(1);
+    if (player === 0) reroll(0);
+  }
+
+  if (rollDiceStrategy === settingsConstants.rollDiceStrategy.afterRound && player === 1){
+    reroll(1);
+    reroll(0);
+  }
+  if (movementStrategy === settingsConstants.movementStrategy.afterPlayer){
+    if (player === 0) redDiceOnBoard.forEach(function(die) { moveForward(die,0)});
+    if (player === 1) blueDiceOnBoard.forEach(function(die) { moveForward(die,1)});
+  }
+  if (movementStrategy === settingsConstants.movementStrategy.afterTurn) {
+    redDiceOnBoard.forEach(function(die) { moveForward(die,0)});
+    blueDiceOnBoard.forEach(function(die) { moveForward(die,1)});
+  }
+  if (movementStrategy === settingsConstants.movementStrategy.afterRound && player === 1){
+    redDiceOnBoard.forEach(function(die) { moveForward(die,0)});
+    blueDiceOnBoard.forEach(function(die) { moveForward(die,1)});
+  }
+  game.time.events.add(Phaser.Timer.SECOND * 0.6, switchPlayer, this);
 }
 
 function switchPlayer(){
@@ -355,8 +393,7 @@ function onDragStop(sprite, pointer) {
       for(row = 0; row < boardHeight; row++){
         var spriteX = screenX/2 - ((boardWidth)/2 * tileDim) + (col * tileDim);
         var spriteY = screenY/2 - ((boardHeight/2) * tileDim) + (row * tileDim) -100;
-        if(overLap(sprite.x,sprite.y,diceDim,diceDim,spriteX,spriteY,tileDim,tileDim)){
-          if(isPlayableSpot(player,row,col)){
+        if(overLap(sprite.x,sprite.y,diceDim,diceDim,spriteX,spriteY,tileDim,tileDim) && isPlayableSpot(player,row,col)){
           sprite.x = spriteX + (tileDim-diceDim)/2;
           sprite.y = spriteY + (tileDim-diceDim)/2;
           sprite.pos = boardWidth * row + col;
@@ -370,7 +407,6 @@ function onDragStop(sprite, pointer) {
             redDiceOnBoard.add(sprite);
           }
           return;
-        }
         }
       }
     }
@@ -405,16 +441,12 @@ function jumpDieToCup(dieSprite,whosCup){
   game.add.tween(dieSprite.scale).to({x:1.3,y:1.3}, 250, Phaser.Easing.Quadratic.InOut, true, 0, 0, true);
 }
 
-function runMoves(){
-  redDiceOnBoard.forEach(function(die) { moveForward(die,0)});
-  blueDiceOnBoard.forEach(function(die) { moveForward(die,1)});
-}
-
 function moveForward(dieSprite, whoOwns){
   var direction = 1
   if(whoOwns != 0) direction = -1;
 
   dieSprite.col += direction;
+  dieSprite.pos = rowColToPos(dieSprite.row,dieSprite.col);
   var dest = dieSprite.x +  direction * (tileDim);
   //game.physics.arcade.accelerateToXY(dieSprite,dest,dieSprite.y);
   dieSprite.currentTween = game.add.tween(dieSprite).to({x:dest}, 250, Phaser.Easing.Cubic.In, true);
