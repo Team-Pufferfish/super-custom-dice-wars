@@ -8,6 +8,16 @@ var settingsConstants = {
     reinforceLineOne: "First free spot behind center line",
     reinforceLineAny: "Any free spot behind center line",
     homeRowOnly: "Only in base"
+  },
+  movementStrategy: {
+    afterPlayer: "Moves current player's dice after their turn",
+    afterTurn: "Moves both player's dice after each turn",
+    afterRound: "Moves dice after each round"
+  },
+  rollDiceStrategy: {
+    afterTurn: "Roll dice after each player's turn",
+    afterRound: "Roll both player's dice after each round",
+    beforeTurn: "Roll dice before each player's turn"
   }
 }
 
@@ -60,7 +70,9 @@ var diceDim = 85;
 
 var endTurn;
 var placementStrategy = settingsConstants.placementStrategy.reinforceLineAny;
-var playerDiceCount = 4;
+var movementStrategy = settingsConstants.movementStrategy.afterRound;
+var rollDiceStrategy = settingsConstants.rollDiceStrategy.afterRound;
+var playerDiceCount = 6;
 var playerBonusDiceCount = 2;
 
 //groups
@@ -84,9 +96,9 @@ function reroll(player){
     let diceValue = rollDie();
 
     var texture = die.key;
-
+  //  jumpDieToCup(die,player);
     die.value = diceValue;
-    die.loadTexture(texture,diceValue - 1);
+    die.frame = diceValue - 1;
   });
 
 }
@@ -289,8 +301,38 @@ function create() {
 
 function endPlayerTurn(){
   toggleDieInput(player,false);
+
   endTurn.setStyle(styleWhite);
-  runMoves();
+
+  if (rollDiceStrategy === settingsConstants.rollDiceStrategy.beforeTurn){
+    if (player === 0) reroll(1);
+    if (player === 1) reroll(0);
+  }
+
+  if (rollDiceStrategy === settingsConstants.rollDiceStrategy.afterTurn) {
+    if (player === 1) reroll(1);
+    if (player === 0) reroll(0);
+  }
+
+  if (rollDiceStrategy === settingsConstants.rollDiceStrategy.afterRound && player === 1){
+    reroll(1);
+    reroll(0);
+  }
+
+
+
+  if (movementStrategy === settingsConstants.movementStrategy.afterPlayer){
+    if (player === 0) redDiceOnBoard.forEach(function(die) { moveForward(die,0)});
+    if (player === 1) blueDiceOnBoard.forEach(function(die) { moveForward(die,1)});
+  }
+  if (movementStrategy === settingsConstants.movementStrategy.afterTurn) {
+    redDiceOnBoard.forEach(function(die) { moveForward(die,0)});
+    blueDiceOnBoard.forEach(function(die) { moveForward(die,1)});
+  }
+  if (movementStrategy === settingsConstants.movementStrategy.afterRound && player === 1){
+    redDiceOnBoard.forEach(function(die) { moveForward(die,0)});
+    blueDiceOnBoard.forEach(function(die) { moveForward(die,1)});
+  }
   game.time.events.add(Phaser.Timer.SECOND, switchPlayer, this);
 }
 
@@ -395,11 +437,6 @@ function jumpDieToCup(dieSprite,whosCup){
 
   // Add another rotation tween to the same character.
   game.add.tween(dieSprite.scale).to({x:1.3,y:1.3}, 250, Phaser.Easing.Quadratic.InOut, true, 0, 0, true);
-}
-
-function runMoves(){
-  redDiceOnBoard.forEach(function(die) { moveForward(die,0)});
-  blueDiceOnBoard.forEach(function(die) { moveForward(die,1)});
 }
 
 function moveForward(dieSprite, whoOwns){
