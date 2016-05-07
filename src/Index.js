@@ -65,7 +65,10 @@ function isTileFree(row,col){
   //blueT
 }
 
-function reroll(playerHand){
+function reroll(player){
+
+  var playerHand = player === 0 ? redDiceInHand : blueDiceInHand;
+
   playerHand.forEach((die) => {
     let diceValue = rollDie();
 
@@ -74,6 +77,26 @@ function reroll(playerHand){
     die.value = diceValue;
     die.loadTexture(texture,diceValue - 1);
   });
+
+}
+
+function getPlayableSpots(playerID){
+  var board = playerID === 0 ? redDiceOnBoard : blueDiceOnBoard;
+  var diceCol = playerID === 0 ? 0 : boardWidth - 1;
+  let playableSpots = [];
+  for (let i = 0; i < boardHeight; i++ ){
+    playableSpots.push([diceCol,i]);
+  }
+
+  var takenSpotsInCol = board.filter((x) => x.col === diceCol);
+
+  takenSpotsInCol.list.forEach((elem) => {
+    console.log(playableSpots.indexOf([elem.col,elem.row]))
+    playableSpots.splice(playableSpots.indexOf([elem.col,elem.row]))
+  });
+
+  return playableSpots;
+
 
 }
 
@@ -149,13 +172,13 @@ function create() {
   let blueRollButton = endTurn = game.add.text(cupBlue.x + 20,cupBlue.y + 150, "ROLL",styleBlue);
   blueRollButton.inputEnabled = true;
   blueRollButton.events.onInputDown.add((evt) => {
-    reroll(blueDiceInHand);
+    reroll(1);
   });
 
   let redRollButton = endTurn = game.add.text(cupRed.x + 20,cupRed.y + 150, "ROLL",styleRed);
   redRollButton.inputEnabled = true;
   redRollButton.events.onInputDown.add((evt) => {
-    reroll(redDiceInHand);
+    reroll(0);
   });
 
   //make blueDice
@@ -215,6 +238,8 @@ function onDragStart(sprite, pointer) {
     }else {
       blueTargets.alpha = 0.5;
     }
+
+    console.log(getPlayableSpots(player));
 }
 
 function onDragStop(sprite, pointer) {
