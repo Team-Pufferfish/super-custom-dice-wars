@@ -177,10 +177,6 @@ enemyBoard.forEach((elem) => {
 }
 
 function create() {
-
-
-
-
   background = game.add.image(0,0,'background');
   cupRed = game.add.image(0,screenY-cupHeight,'cups');
   cupBlue = game.add.image(screenX - cupWidth, screenY-cupHeight,"cups");
@@ -280,7 +276,7 @@ function create() {
     dice.events.onDragStop.add(onDragStop, this);
     dice.currentTween = null;
     dice.unstopableTween = null;
-    //dice.input.draggable = false;
+    dice.input.draggable = false;
   }
   //End Turn Button
   endTurn = game.add.text(game.world.centerX-10,screenY - cupHeight/2, "End Turn",styleRed);
@@ -301,6 +297,7 @@ function endPlayerTurn(){
 function switchPlayer(){
   player++;
   player = player % 2;
+  clearTweens();
   toggleDieInput(player,true);
   if(player === 0)
     endTurn.setStyle(styleRed);
@@ -314,6 +311,11 @@ function toggleDieInput(player,set){
   else {
     blueDiceInHand.forEach(die => die.input.draggable = set);
   }
+}
+
+function clearTweens(){
+  redDiceInHand.forEach(function(red){red.unstopableTween = null;})
+  blueDiceInHand.forEach(function(blue){blue.unstopableTween = null;})
 }
 
 var lastDragStartX;
@@ -360,8 +362,6 @@ function onDragStop(sprite, pointer) {
           } else {
             redDiceOnBoard.add(sprite);
           }
-
-
           return;
         }
       }
