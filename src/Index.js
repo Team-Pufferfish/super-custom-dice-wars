@@ -111,7 +111,7 @@ function getAllPositionsInRow(pos){
 function isPlayableSpot(playerID, row, col){
   var playableSpots = getPlayableSpots(playerID);
 
-  return playableSpots(rowColToPos(row, col)) === 1;
+  return playableSpots[rowColToPos(row, col)] === 1;
 
 }
 
@@ -127,7 +127,7 @@ function getPlayableSpots(playerID){
   for (let i = 0; i < boardHeight * boardWidth; i++ ){
     playableSpots.push(1);
   }
-  
+
   //remove everything except the home row, this is the default strategy
   for (let i = 0; i < playableSpots.length; i++){
     if (posToRowHeight(i).col !== homeRow) {
@@ -347,7 +347,7 @@ function onDragStop(sprite, pointer) {
       for(row = 0; row < boardHeight; row++){
         var spriteX = screenX/2 - ((boardWidth)/2 * tileDim) + (col * tileDim);
         var spriteY = screenY/2 - ((boardHeight/2) * tileDim) + (row * tileDim) -100;
-        if(overLap(sprite.x,sprite.y,diceDim,diceDim,spriteX,spriteY,tileDim,tileDim)){
+        if(overLap(sprite.x,sprite.y,diceDim,diceDim,spriteX,spriteY,tileDim,tileDim) && isPlayableSpot(player,row,col)){
           sprite.x = spriteX + (tileDim-diceDim)/2;
           sprite.y = spriteY + (tileDim-diceDim)/2;
           sprite.pos = boardWidth * row + col;
@@ -407,6 +407,7 @@ function moveForward(dieSprite, whoOwns){
   if(whoOwns != 0) direction = -1;
 
   dieSprite.col += direction;
+  dieSprite.pos = rowColToPos(dieSprite.row,dieSprite.col);
   var dest = dieSprite.x +  direction * (tileDim);
   //game.physics.arcade.accelerateToXY(dieSprite,dest,dieSprite.y);
   dieSprite.currentTween = game.add.tween(dieSprite).to({x:dest}, 250, Phaser.Easing.Cubic.In, true);
