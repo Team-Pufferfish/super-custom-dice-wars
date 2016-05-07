@@ -43,6 +43,7 @@ var boardHeight = 4;
 var boardWidth = 6;
 var tileDim = 127;
 var diceDim = 85;
+var placementStrategy = "homeRowOnly";
 var endTurn;
 
 var playerDiceCount = 4;
@@ -80,19 +81,37 @@ function reroll(player){
 
 }
 
+function posToRowHeight(pos){
+  //sprite.pos = boardWidth * row + col;
+  return {
+    col: pos % boardWidth,
+    row: Math.floor(pos / boardWidth)
+  }
+}
+//18 0,4
+function rowColToPos(row,col){
+  return boardWidth * row + col;
+}
+
 function getPlayableSpots(playerID){
   var board = playerID === 0 ? redDiceOnBoard : blueDiceOnBoard;
-  var diceCol = playerID === 0 ? 0 : boardWidth - 1;
+  var homeRow = playerID === 0 ? 0 : boardWidth - 1;
   let playableSpots = [];
-  for (let i = 0; i < boardHeight; i++ ){
-    playableSpots.push([diceCol,i]);
+  for (let i = 0; i < boardHeight * boardWidth; i++ ){
+    playableSpots.push(1);
   }
 
-  var takenSpotsInCol = board.filter((x) => x.col === diceCol);
+  for (let i = 0; i < playableSpots.length; i++){
+    if (posToRowHeight(i).col !== homeRow && placementStrategy === "homeRowOnly"){
+      playableSpots[i] = 0;
+    }
+  }
 
-  takenSpotsInCol.list.forEach((elem) => {
-    console.log(playableSpots.indexOf([elem.col,elem.row]))
-    playableSpots.splice(playableSpots.indexOf([elem.col,elem.row]))
+
+
+  board.forEach((elem) => {
+      playableSpots[elem.pos] = 0;
+  //  playableSpots.splice(playableSpots.indexOf([elem.col,elem.row]))
   });
 
   return playableSpots;
@@ -255,7 +274,7 @@ function onDragStop(sprite, pointer) {
         if(overLap(sprite.x,sprite.y,diceDim,diceDim,spriteX,spriteY,tileDim,tileDim)){
           sprite.x = spriteX + (tileDim-diceDim)/2;
           sprite.y = spriteY + (tileDim-diceDim)/2;
-
+          sprite.pos = boardWidth * row + col;
           sprite.col = col;
           sprite.row = row;
           sprite.input.draggable = false;
