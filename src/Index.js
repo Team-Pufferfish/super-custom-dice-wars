@@ -54,8 +54,15 @@ var blueTargets;
 var redDiceInHand;
 var blueDiceInHand;
 
+var blueDiceOnBoard;
+var redDiceOnBoard;
+
 //simpleGameState
 var player = 0;
+
+function isTileFree(row,col){
+  blueT
+}
 
 function create() {
 
@@ -70,8 +77,12 @@ function create() {
   tiles = game.add.group();
   redTargets = game.add.group();
   blueTargets = game.add.group();
+
   redDiceInHand = game.add.group();
   blueDiceInHand = game.add.group();
+
+  blueDiceOnBoard = game.add.group();
+  redDiceOnBoard = game.add.group();
 
   //draw tiles
   var col,row;
@@ -159,7 +170,7 @@ function toggleDieInput(player,set){
   if(player === 0)
     redDiceInHand.forEach(die  => die.input.draggable = set);
   else {
-    blueDieInHand.forEach(die => die.input.draggable = set);
+    blueDiceInHand.forEach(die => die.input.draggable = set);
   }
 }
 
@@ -189,8 +200,18 @@ function onDragStop(sprite, pointer) {
         if(overLap(sprite.x,sprite.y,diceDim,diceDim,spriteX,spriteY,tileDim,tileDim)){
           sprite.x = spriteX + (tileDim-diceDim)/2;
           sprite.y = spriteY + (tileDim-diceDim)/2;
+
           sprite.col = col;
           sprite.row = row;
+          sprite.input.draggable = false;
+          sprite.parent.remove(sprite);
+          if (sprite.uniqueRef.indexOf('blue') > -1){
+              blueDiceOnBoard.add(sprite);
+          } else {
+            redDiceOnBoard.add(sprite);
+          }
+
+
           return;
         }
       }
