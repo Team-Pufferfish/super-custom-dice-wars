@@ -62,7 +62,19 @@ var redDiceOnBoard;
 var player = 0;
 
 function isTileFree(row,col){
-  blueT
+  //blueT
+}
+
+function reroll(playerHand){
+  playerHand.forEach((die) => {
+    let diceValue = rollDie();
+
+    var texture = die.key;
+
+    die.value = diceValue;
+    die.loadTexture(texture,diceValue - 1);
+  });
+
 }
 
 function create() {
@@ -133,6 +145,19 @@ function create() {
     dice.events.onDragStop.add(onDragStop, this);
 
   }
+
+  let blueRollButton = endTurn = game.add.text(cupBlue.x + 20,cupBlue.y + 150, "ROLL",styleBlue);
+  blueRollButton.inputEnabled = true;
+  blueRollButton.events.onInputDown.add((evt) => {
+    reroll(blueDiceInHand);
+  });
+
+  let redRollButton = endTurn = game.add.text(cupRed.x + 20,cupRed.y + 150, "ROLL",styleRed);
+  redRollButton.inputEnabled = true;
+  redRollButton.events.onInputDown.add((evt) => {
+    reroll(redDiceInHand);
+  });
+
   //make blueDice
   i = 0;
 
