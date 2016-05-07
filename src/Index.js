@@ -160,14 +160,20 @@ function create() {
       if (col !== boardWidth-1){
         var temp = redTargets.create(spriteX,spriteY,"redTargets");
         temp.uniqueRef = "T" + col + row;
+        temp.col = col;
+        temp.row = row;
+        temp.pos = rowColToPos(row,col);
       }if(col !== 0){
-        blueTargets.create(spriteX,spriteY,"blueTargets");
+        var temp = blueTargets.create(spriteX,spriteY,"blueTargets");
+        temp.col = col;
+        temp.row = row;
+        temp.pos = rowColToPos(row,col);
       }
     }
   }
 
-  redTargets.alpha = 0.0;
-  blueTargets.alpha = 0.0;
+  redTargets.forEach(x => x.alpha = 0.0);
+  blueTargets.forEach(x => x.alpha = 0.0);
 
   //add dice to hands
   var i = 0;
@@ -252,18 +258,24 @@ var lastDragStartY;
 function onDragStart(sprite, pointer) {
     lastDragStartX = sprite.x;
     lastDragStartY = sprite.y;
+
+    var spots = getPlayableSpots(player);
     if (player === 0){
-      redTargets.alpha = 0.5;
+    //  var available = redTargets.filter(x => spots[x.pos] === 1);
+
+
+      redTargets.filter(x => spots[x.pos] === 1).list.forEach(x => x.alpha = 0.5);
+
     }else {
-      blueTargets.alpha = 0.5;
+      blueTargets.filter(x => spots[x.pos] === 1).list.forEach(x => x.alpha = 0.5);
     }
 
     console.log(getPlayableSpots(player));
 }
 
 function onDragStop(sprite, pointer) {
-  redTargets.alpha = 0.0;
-  blueTargets.alpha = 0.0;
+  redTargets.forEach(x => x.alpha = 0.0);
+  blueTargets.forEach(x => x.alpha = 0.0);
 
   if(overLap(sprite.x,sprite.y,diceDim,diceDim,screenX/2 - ((boardWidth)/2 * tileDim),screenY/2 - ((boardHeight/2) * tileDim) -100,screenX/2 - ((boardWidth)/2 * tileDim) + (boardWidth * tileDim),screenY/2 - ((boardHeight/2) * tileDim) + (boardHeight * tileDim) -100)){  //draw tiles
     var col,row;
