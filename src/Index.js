@@ -18,10 +18,12 @@ global.Phaser = require('../node_modules/phaser-shim/dist/phaser');
 
 var styleRed = { font: "20px Arial", fill: "#ff0044", align: "center" };
 var styleBlue = { font: "20px Arial", fill: "#0044FF", align: "center" };
+var styleWhite = { font: "20px Arial", fill: "#FFFFFF", align: "center" };
 
 var screenX = 1024;
 var screenY = 768;
-var game = new Phaser.Game(screenX, screenY, Phaser.Canvas, 'cube-party', { preload, create, render });
+var game = new Phaser.Game(screenX, screenY, Phaser.Canvas, 'cube-party', { preload: preload, create: create, update: update, render: render });
+var animating= false;
 
 
 function setText(text) {
@@ -246,7 +248,8 @@ function create() {
     dice.input.enableDrag();
     dice.events.onDragStart.add(onDragStart, this);
     dice.events.onDragStop.add(onDragStop, this);
-
+    dice.currentTween = null;
+    dice.unstopableTween = null;
   }
 
   let blueRollButton = endTurn = game.add.text(cupBlue.x + 20,cupBlue.y + 150, "ROLL",styleBlue);
@@ -263,8 +266,6 @@ function create() {
 
   //make blueDice
   i = 0;
-
-  //make redDice
   for(i; i < playerDiceCount; i++)
   {
     let pos = [cupBlue.x + i * 86,cupBlue.y];
@@ -277,7 +278,9 @@ function create() {
     dice.input.enableDrag();
     dice.events.onDragStart.add(onDragStart, this);
     dice.events.onDragStop.add(onDragStop, this);
-
+    dice.currentTween = null;
+    dice.unstopableTween = null;
+    //dice.input.draggable = false;
   }
   //End Turn Button
   endTurn = game.add.text(game.world.centerX-10,screenY - cupHeight/2, "End Turn",styleRed);
@@ -290,6 +293,12 @@ function create() {
 
 function endPlayerTurn(){
   toggleDieInput(player,false);
+  endTurn.setStyle(styleWhite);
+  runMoves();
+  game.time.events.add(Phaser.Timer.SECOND, switchPlayer, this);
+}
+
+function switchPlayer(){
   player++;
   player = player % 2;
   toggleDieInput(player,true);
@@ -372,6 +381,38 @@ function onDragStop(sprite, pointer) {
   }
 }
 
+function jumpDieToCup(dieSprite,whosCup){
+  var pos;
+  if (whosCup === 0){
+    pos = [cupRed.x + 4 * 86,cupRed.y,cupWidth,cupHeight];
+    //pos = getRandomInBounds(cupRed.x,cupRed.y,cupWidth,cupHeight);
+  }else{
+    //pos = getRandomInBounds(cupBlue.x,cupBlue.y,cupWidth,cupHeight);
+    pos = [cupBlue.x + 4 * 86,cupBlue.y];
+  }
+  // Add a simple bounce tween to each character's position.
+  dieSprite.unstopableTween = game.add.tween(dieSprite).to({x:pos[0],y:pos[1]}, 500, Phaser.Easing.Cubic.In, true);
+
+  // Add another rotation tween to the same character.
+  game.add.tween(dieSprite.scale).to({x:1.3,y:1.3}, 250, Phaser.Easing.Quadratic.InOut, true, 0, 0, true);
+}
+
+function runMoves(){
+  redDiceOnBoard.forEach(function(die) { moveForward(die,0)});
+  blueDiceOnBoard.forEach(function(die) { moveForward(die,1)});
+}
+
+function moveForward(dieSprite, whoOwns){
+  var direction = 1
+  if(whoOwns != 0) direction = -1;
+
+  dieSprite.col += direction;
+  var dest = dieSprite.x +  direction * (tileDim);
+  //game.physics.arcade.accelerateToXY(dieSprite,dest,dieSprite.y);
+  dieSprite.currentTween = game.add.tween(dieSprite).to({x:dest}, 250, Phaser.Easing.Cubic.In, true);
+  game.add.tween(dieSprite).to({angle:-5*direction}, 125, Phaser.Easing.Quadratic.InOut, true, 0, 0, true);
+}
+
 function inBounds(x,y,w,h,bx,by,bw,bh){
   return !(
     x+w < bx ||
@@ -392,4 +433,65 @@ function overLap(x,y,w,h,bx,by,bw,bh){
 
 function render() {
 
+}
+
+function update(){
+  redDiceOnBoard.forEach(function(red){
+    blueDiceOnBoard.forEach(function(blue){
+      if(checkOverlap(red,blue) && red.unstopableTween === null && blue.unstopableTween === null){ collisionHandler(red,blue) };
+    })
+  })
+}
+
+function checkOverlap(spriteA, spriteB) {
+
+    var boundsA = spriteA.getBounds();
+    var boundsB = spriteB.getBounds();
+
+    return Phaser.Rectangle.intersects(boundsA, boundsB);
+
+}
+
+function collisionHandler(red, blue){
+  var result = resolveConflict(red,blue);
+  if(result[0] === 0){
+    stopAndReturnToCup(blue,1);
+    red.value = result[1];
+    red.frame = red.value -1;
+  }else if(result[0] === 1){
+    stopAndReturnToCup(red,0);
+    blue.value = result[1];
+    blue.frame = blue.value -1;
+  }else{
+    stopAndReturnToCup(red,0);
+    stopAndReturnToCup(blue,1);
+  }
+}
+
+function stopAndReturnToCup(sprite, whosCup){
+  if (sprite.currentTween != null)
+    sprite.currentTween.stop();
+  sprite.currentTween = null;
+  sprite.parent.remove(sprite);
+  if (sprite.uniqueRef.indexOf('blue') > -1){
+      blueDiceInHand.add(sprite);
+  } else {
+    redDiceInHand.add(sprite);
+  }
+  jumpDieToCup(sprite,whosCup);
+}
+
+function resolveConflict(red, blue){
+  var victory = -1;
+  var val = -1;
+
+  if (red.value > blue.value){
+    victory = 0;
+    val = red.value - blue.value;
+  }else if(blue.value > red.value){
+    victory = 1;
+    val = blue.value - red.value;
+  }
+
+  return [victory,val];
 }
