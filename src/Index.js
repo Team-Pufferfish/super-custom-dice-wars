@@ -1,4 +1,4 @@
-import {getRandomInBounds, rollDie} from './utility.js'
+import {getRandomInBounds, getRandomInsideBounds, rollDie} from './utility.js'
 import _ from 'lodash';
 
 var settingsConstants = {
@@ -73,9 +73,9 @@ var tileDim = 127;
 var diceDim = 85;
 
 var endTurn;
-var placementStrategy = settingsConstants.placementStrategy.reinforceLineAny;
+var placementStrategy = settingsConstants.placementStrategy.behindAny;
 var movementStrategy = settingsConstants.movementStrategy.afterRound;
-var rollDiceStrategy = settingsConstants.rollDiceStrategy.afterRound;
+var rollDiceStrategy = settingsConstants.rollDiceStrategy.beforeTurn;
 var playerDiceCount = 6;
 var playerBonusDiceCount = 2;
 
@@ -100,7 +100,7 @@ function reroll(player){
     let diceValue = rollDie();
 
     var texture = die.key;
-  //  jumpDieToCup(die,player);
+    jumpDieToCup(die,player);
     die.value = diceValue;
     die.frame = diceValue - 1;
   });
@@ -250,7 +250,7 @@ function create() {
   //make redDice
   for(i; i < playerDiceCount; i++)
   {
-    let pos = [cupRed.x + i * 86,cupRed.y,cupWidth,cupHeight];
+    let pos = getRandomInsideBounds(cupRed.x,cupRed.y,cupWidth,cupHeight,diceDim);
     let diceValue = rollDie();
     var dice = redDiceInHand.create(pos[0],pos[1],"redDice",diceValue - 1);
 
@@ -280,7 +280,7 @@ function create() {
   i = 0;
   for(i; i < playerDiceCount; i++)
   {
-    let pos = [cupBlue.x + i * 86,cupBlue.y];
+    let pos = getRandomInsideBounds(cupBlue.x,cupBlue.y,cupWidth,cupHeight,diceDim);
     let diceValue = rollDie();
     var dice = blueDiceInHand.create(pos[0],pos[1],"blueDice",diceValue - 1);
 
@@ -305,8 +305,8 @@ function create() {
 
 function endPlayerTurn(){
   toggleDieInput(player,false);
-
   endTurn.setStyle(styleWhite);
+  endTurn.inputEnabled = false;
 
   if (rollDiceStrategy === settingsConstants.rollDiceStrategy.beforeTurn){
     if (player === 0) reroll(1);
@@ -428,11 +428,11 @@ function onDragStop(sprite, pointer) {
 function jumpDieToCup(dieSprite,whosCup){
   var pos;
   if (whosCup === 0){
-    pos = [cupRed.x + 4 * 86,cupRed.y,cupWidth,cupHeight];
-    //pos = getRandomInBounds(cupRed.x,cupRed.y,cupWidth,cupHeight);
+    //pos = [cupRed.x + 4 * 86,cupRed.y,cupWidth,cupHeight];
+    pos = getRandomInsideBounds(cupRed.x,cupRed.y,cupWidth,cupHeight,diceDim);
   }else{
-    //pos = getRandomInBounds(cupBlue.x,cupBlue.y,cupWidth,cupHeight);
-    pos = [cupBlue.x + 4 * 86,cupBlue.y];
+    pos = getRandomInsideBounds(cupBlue.x,cupBlue.y,cupWidth,cupHeight,diceDim);
+    //pos = [cupBlue.x + 4 * 86,cupBlue.y];
   }
   // Add a simple bounce tween to each character's position.
   dieSprite.unstopableTween = game.add.tween(dieSprite).to({x:pos[0],y:pos[1]}, 500, Phaser.Easing.Cubic.In, true);
