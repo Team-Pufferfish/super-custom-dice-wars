@@ -111,7 +111,7 @@ function getAllPositionsInRow(pos){
 function isPlayableSpot(playerID, row, col){
   var playableSpots = getPlayableSpots(playerID);
 
-  return playableSpots(rowColToPos(row, col)) === 1;
+  return playableSpots[rowColToPos(row, col)] === 1;
 
 }
 
@@ -127,7 +127,7 @@ function getPlayableSpots(playerID){
   for (let i = 0; i < boardHeight * boardWidth; i++ ){
     playableSpots.push(1);
   }
-  
+
   //remove everything except the home row, this is the default strategy
   for (let i = 0; i < playableSpots.length; i++){
     if (posToRowHeight(i).col !== homeRow) {
@@ -177,10 +177,6 @@ enemyBoard.forEach((elem) => {
 }
 
 function create() {
-
-
-
-
   background = game.add.image(0,0,'background');
   cupRed = game.add.image(0,screenY-cupHeight,'cups');
   cupBlue = game.add.image(screenX - cupWidth, screenY-cupHeight,"cups");
@@ -280,7 +276,7 @@ function create() {
     dice.events.onDragStop.add(onDragStop, this);
     dice.currentTween = null;
     dice.unstopableTween = null;
-    //dice.input.draggable = false;
+    dice.input.draggable = false;
   }
   //End Turn Button
   endTurn = game.add.text(game.world.centerX-10,screenY - cupHeight/2, "End Turn",styleRed);
@@ -301,6 +297,7 @@ function endPlayerTurn(){
 function switchPlayer(){
   player++;
   player = player % 2;
+  clearTweens();
   toggleDieInput(player,true);
   if(player === 0)
     endTurn.setStyle(styleRed);
@@ -314,6 +311,11 @@ function toggleDieInput(player,set){
   else {
     blueDiceInHand.forEach(die => die.input.draggable = set);
   }
+}
+
+function clearTweens(){
+  redDiceInHand.forEach(function(red){red.unstopableTween = null;})
+  blueDiceInHand.forEach(function(blue){blue.unstopableTween = null;})
 }
 
 var lastDragStartX;
@@ -348,6 +350,7 @@ function onDragStop(sprite, pointer) {
         var spriteX = screenX/2 - ((boardWidth)/2 * tileDim) + (col * tileDim);
         var spriteY = screenY/2 - ((boardHeight/2) * tileDim) + (row * tileDim) -100;
         if(overLap(sprite.x,sprite.y,diceDim,diceDim,spriteX,spriteY,tileDim,tileDim)){
+          if(isPlayableSpot(player,row,col)){
           sprite.x = spriteX + (tileDim-diceDim)/2;
           sprite.y = spriteY + (tileDim-diceDim)/2;
           sprite.pos = boardWidth * row + col;
@@ -360,9 +363,8 @@ function onDragStop(sprite, pointer) {
           } else {
             redDiceOnBoard.add(sprite);
           }
-
-
           return;
+        }
         }
       }
     }
