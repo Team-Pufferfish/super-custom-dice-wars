@@ -35,6 +35,7 @@
   },
   "homepage": "https://github.com/Granze/react-starterify",
   "dependencies": {
+    "lodash": "^4.11.2",
     "p2": "^0.7.1",
     "phaser": "^2.4.7",
     "phaser-shim": "^2.4.8",

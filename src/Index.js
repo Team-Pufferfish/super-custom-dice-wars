@@ -1,4 +1,16 @@
 import {getRandomInBounds, rollDie} from './utility.js'
+import _ from 'lodash';
+
+var settingsConstants = {
+  placementStrategy: {
+    behindAny: "Any free spot behind a friendly die",
+    behindOne: "First free spot behind a friendly die",
+    reinforceLineOne: "First free spot behind center line",
+    reinforceLineAny: "Any free spot behind center line",
+    homeRowOnly: "Only in base"
+  }
+}
+
 
 global.PIXI = require('../node_modules/phaser-shim/dist/pixi');
 global.Phaser = require('../node_modules/phaser-shim/dist/phaser');
@@ -43,9 +55,9 @@ var boardHeight = 4;
 var boardWidth = 6;
 var tileDim = 127;
 var diceDim = 85;
-var placementStrategy = "homeRowOnly";
-var endTurn;
 
+var endTurn;
+var placementStrategy = settingsConstants.placementStrategy.reinforceLineAny;
 var playerDiceCount = 4;
 var playerBonusDiceCount = 2;
 
@@ -61,10 +73,6 @@ var redDiceOnBoard;
 
 //simpleGameState
 var player = 0;
-
-function isTileFree(row,col){
-  //blueT
-}
 
 function reroll(player){
 
@@ -93,30 +101,77 @@ function rowColToPos(row,col){
   return boardWidth * row + col;
 }
 
+function getAllPositionsInRow(pos){
+  let {row,col} = posToRowHeight(pos);
+  return _.range(pos-col,pos-col + boardWidth);
+}
+
+function isPlayableSpot(playerID, row, col){
+  var playableSpots = getPlayableSpots(playerID);
+
+  return playableSpots(rowColToPos(row, col)) === 1;
+
+}
+
 function getPlayableSpots(playerID){
+
+  //your board and enemy board
   var board = playerID === 0 ? redDiceOnBoard : blueDiceOnBoard;
+  var enemyBoard = playerID === 1 ? redDiceOnBoard : blueDiceOnBoard;
+
+  //base row
   var homeRow = playerID === 0 ? 0 : boardWidth - 1;
   let playableSpots = [];
   for (let i = 0; i < boardHeight * boardWidth; i++ ){
     playableSpots.push(1);
   }
-
+  
+  //remove everything except the home row, this is the default strategy
   for (let i = 0; i < playableSpots.length; i++){
-    if (posToRowHeight(i).col !== homeRow && placementStrategy === "homeRowOnly"){
+    if (posToRowHeight(i).col !== homeRow) {
       playableSpots[i] = 0;
     }
   }
 
-
-
+  //add full board positions
   board.forEach((elem) => {
-      playableSpots[elem.pos] = 0;
+      playableSpots[elem.pos] = 0; //remove the position of the dice itself
+      var row = getAllPositionsInRow(elem.pos);
+      var reinforceLine = row[Math.ceil(boardWidth / 2)];
+
+      if (playerID === 1) reinforceLine -= 1;
+
+      var filterStrategy;
+
+      if (placementStrategy === settingsConstants.placementStrategy.behindAny) {
+         if (playerID === 0) filterStrategy = pos => pos < elem.pos;
+         if (playerID === 1) filterStrategy = pos => pos > elem.pos;
+      }
+
+      if (placementStrategy === settingsConstants.placementStrategy.behindOne) {
+        if (playerID === 0) filterStrategy = pos => pos === elem.pos - 1;
+        if (playerID === 1) filterStrategy = pos => pos === elem.pos + 1
+      }
+
+      if (placementStrategy === settingsConstants.placementStrategy.reinforceLineOne){
+          if (playerID === 0) filterStrategy = pos => pos === reinforceLine - 1 && elem.pos >= reinforceLine;
+          if (playerID === 1) filterStrategy = pos => pos === reinforceLine + 1 && elem.pos <= reinforceLine;
+      }
+
+      if (placementStrategy === settingsConstants.placementStrategy.reinforceLineAny){
+          if (playerID === 0) filterStrategy = pos => pos < reinforceLine && elem.pos >= reinforceLine;
+          if (playerID === 1) filterStrategy = pos => pos > reinforceLine && elem.pos <= reinforceLine;
+      }
+
+      _.each(_.filter(row,filterStrategy), pos => playableSpots[pos] = 1);
   //  playableSpots.splice(playableSpots.indexOf([elem.col,elem.row]))
-  });
+});
 
+//add enemy board positions
+enemyBoard.forEach((elem) => {
+  playableSpots[elem.pos] = 0;
+});
   return playableSpots;
-
-
 }
 
 function create() {
