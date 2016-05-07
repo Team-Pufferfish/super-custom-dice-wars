@@ -20,10 +20,14 @@ var styleRed = { font: "20px Arial", fill: "#ff0044", align: "center" };
 var styleBlue = { font: "20px Arial", fill: "#0044FF", align: "center" };
 var styleWhite = { font: "20px Arial", fill: "#FFFFFF", align: "center" };
 
+var styleRedVictory = { font: "75px Arial", fill: "#ff0044", align: "center" };
+var styleBlueVictory = { font: "75px Arial", fill: "#0044FF", align: "center" };
+var styleDraw = { font: "75px Arial", fill: "#FFFFFF", align: "center" };
+
 var screenX = 1024;
 var screenY = 768;
 var game = new Phaser.Game(screenX, screenY, Phaser.Canvas, 'cube-party', { preload: preload, create: create, update: update, render: render });
-var animating= false;
+var gameOver = false;
 
 
 function setText(text) {
@@ -289,9 +293,10 @@ function create() {
 
 function endPlayerTurn(){
   toggleDieInput(player,false);
+  endTurn.inputEnabled = false;
   endTurn.setStyle(styleWhite);
   runMoves();
-  game.time.events.add(Phaser.Timer.SECOND, switchPlayer, this);
+  game.time.events.add(Phaser.Timer.SECOND * 0.75, switchPlayer, this);
 }
 
 function switchPlayer(){
@@ -303,6 +308,7 @@ function switchPlayer(){
     endTurn.setStyle(styleRed);
   else
     endTurn.setStyle(styleBlue);
+  endTurn.inputEnabled = true;
 }
 
 function toggleDieInput(player,set){
@@ -438,11 +444,62 @@ function render() {
 }
 
 function update(){
+  if(!gameOver){
   redDiceOnBoard.forEach(function(red){
     blueDiceOnBoard.forEach(function(blue){
       if(checkOverlap(red,blue) && red.unstopableTween === null && blue.unstopableTween === null){ collisionHandler(red,blue) };
     })
   })
+  var victory = checkVictory()
+  if(victory != -1) {
+    drawVictory(victory);
+    gameOver = true;
+  }
+}else{
+  endTurn.inputEnabled = false;
+}
+}
+
+function checkVictory(){
+  var redVict = false;
+  var blueVict = false;
+
+  redDiceOnBoard.forEach(function(red) { if (red.col === boardWidth-1) redVict = true;});
+  blueDiceOnBoard.forEach(function(blue) { if (blue.col === 0) blueVict = true;});
+
+  if(redVict && blueVict){
+    return 2;
+  }else if(redVict){
+    return 0;
+  }else if(blueVict){
+    return 1;
+  }else{
+    return -1;
+  }
+}
+
+function drawVictory(victory){
+  toggleDieInput(0,false);
+  toggleDieInput(1,false);
+  endTurn.inputEnabled = false;
+  var style = styleDraw;
+  var name = "Nobody";
+  if(victory === 0){
+    style = styleRedVictory;
+    name = "Red";
+  }else if (victory === 1){
+    style = styleBlueVictory;
+    name = "Blue"
+  }
+  var victoryTest = name + " Wins!";
+
+  var textv=game.add.text(game.world.centerX,game.world.centerY, victoryTest,style);
+  textv.anchor.set(0.5);
+  textv.stroke = "#FFFFFF";
+  textv.strokeThickness = 3;
+  textv.angle = -5;
+  game.add.tween(textv).to({angle:10}, 2000, Phaser.Easing.Quadratic.Out, true, 0, -1, true);
+  game.add.tween(textv.scale).to({x:1.3,y:1.3}, 1000, Phaser.Easing.Quadratic.Out, true, 0, -1, true);
 }
 
 function checkOverlap(spriteA, spriteB) {
