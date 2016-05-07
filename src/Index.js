@@ -131,12 +131,9 @@ function create() {
     dice.input.enableDrag();
     dice.events.onDragStart.add(onDragStart, this);
     dice.events.onDragStop.add(onDragStop, this);
-
   }
   //make blueDice
   i = 0;
-
-  //make redDice
   for(i; i < playerDiceCount; i++)
   {
     let pos = [cupBlue.x + i * 86,cupBlue.y];
@@ -149,7 +146,7 @@ function create() {
     dice.input.enableDrag();
     dice.events.onDragStart.add(onDragStart, this);
     dice.events.onDragStop.add(onDragStop, this);
-
+    dice.input.draggable = false;
   }
   //End Turn Button
   endTurn = game.add.text(game.world.centerX-10,screenY - cupHeight/2, "End Turn",styleRed);
@@ -161,6 +158,8 @@ function create() {
 }
 
 function endPlayerTurn(){
+  runMoves();
+
   toggleDieInput(player,false);
   player++;
   player = player % 2;
@@ -234,6 +233,37 @@ function onDragStop(sprite, pointer) {
         sprite.y = lastDragStartY;
     }
   }
+}
+
+function jumpDieToCup(dieSprite,whosCup){
+  var pos;
+  if (whosCup === 0){
+    pos = [cupRed.x + 4 * 86,cupRed.y,cupWidth,cupHeight];
+    //pos = getRandomInBounds(cupRed.x,cupRed.y,cupWidth,cupHeight);
+  }else{
+    //pos = getRandomInBounds(cupBlue.x,cupBlue.y,cupWidth,cupHeight);
+    pos = [cupBlue.x + 4 * 86,cupBlue.y];
+  }
+  // Add a simple bounce tween to each character's position.
+  game.add.tween(dieSprite).to({x:pos[0],y:pos[1]}, 500, Phaser.Easing.Cubic.In, true);
+
+  // Add another rotation tween to the same character.
+  game.add.tween(dieSprite.scale).to({x:1.3,y:1.3}, 250, Phaser.Easing.Quadratic.InOut, true, 0, 0, true);
+}
+
+function runMoves(){
+  redDiceOnBoard.forEach(function(die) { moveForward(die,0)});
+  blueDiceOnBoard.forEach(function(die) { moveForward(die,1)});
+}
+
+function moveForward(dieSprite, whoOwns){
+  var direction = 1
+  if(whoOwns != 0) direction = -1;
+
+  dieSprite.col += direction;
+  var dest = dieSprite.x +  direction * (tileDim);
+  game.add.tween(dieSprite).to({x:dest}, 250, Phaser.Easing.Cubic.In, true);
+  game.add.tween(dieSprite).to({angle:-5*direction}, 125, Phaser.Easing.Quadratic.InOut, true, 0, 0, true);
 }
 
 function inBounds(x,y,w,h,bx,by,bw,bh){
