@@ -4,7 +4,8 @@ global.PIXI = require('../node_modules/phaser-shim/dist/pixi');
 global.Phaser = require('../node_modules/phaser-shim/dist/phaser');
 
 
-var style = { font: "20px Arial", fill: "#ff0044", align: "center" };
+var styleRed = { font: "20px Arial", fill: "#ff0044", align: "center" };
+var styleBlue = { font: "20px Arial", fill: "#0044FF", align: "center" };
 
 var screenX = 1024;
 var screenY = 768;
@@ -140,7 +141,7 @@ function create() {
 
   }
   //End Turn Button
-  endTurn = game.add.text(game.world.centerX-10,screenY - cupHeight/2, "End Turn",style);
+  endTurn = game.add.text(game.world.centerX-10,screenY - cupHeight/2, "End Turn",styleRed);
   endTurn.inputEnabled = true;
 
   endTurn.events.onInputDown.add(() => {
@@ -153,13 +154,17 @@ function endPlayerTurn(){
   player++;
   player = player % 2;
   toggleDieInput(player,true);
+  if(player === 0)
+    endTurn.setStyle(styleRed);
+  else
+    endTurn.setStyle(styleBlue);
 }
 
 function toggleDieInput(player,set){
   if(player === 0)
     redDiceInHand.forEach(die  => die.input.draggable = set);
   else {
-    blueDieInHand.forEach(die => die.input.draggable = set);
+    blueDiceInHand.forEach(die => die.input.draggable = set);
   }
 }
 
