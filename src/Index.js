@@ -118,9 +118,17 @@ class GameState extends Phaser.State {
 		//simpleGameState
 		this.player = 0;
 
-
 		this.lastDragStartX;
 		this.lastDragStartY;
+
+		//audio objects
+		this.errorSound;
+		this.rollSound;
+		this.placeSound;
+		this.clashSound;
+		this.breakSound;
+		this.turnSound;
+		this.victorySound;
 	}
 
 	preload() {
@@ -149,21 +157,23 @@ class GameState extends Phaser.State {
 		game.load.image('redPass','dist/images/RedPass.png');
 		game.load.image('bluePass','dist/images/BluePass.png');
 		game.load.image('whitePass','dist/images/RunBoard.png');
+
+		///Audio preloads
+		game.load.audio('error', 'dist/audio/159367__huminaatio__7-error.wav');
+		game.load.audio('roll', 'dist/audio/205821__mwirth__dice-on-a-wooden-floor.mp3');
+		game.load.audio('place', 'dist/audio/342707__spacejoe__lock-3-open-lock-2.wav');
+		game.load.audio('clash', 'dist/audio/213005__agaxly__shovel.wav');
+		game.load.audio('break', 'dist/audio/202093__spookymodem__bottle-shattering.wav');
+		game.load.audio('turn', 'dist/audio/118243__e-audio__column-gear-select-up-mono.wav');
+		game.load.audio('victory', 'dist/audio/336725__kubatko__inception-horn-victory.wav');
 	}
 	setText(text) {
 		text.setText("- You have clicked -\n" + store.getState().appstate + " times !");
 	}
 
-
-
-
-
-
  reroll(player) {
-
-
-	var playerHand = player === 0 ? this.redDiceInHand : this.blueDiceInHand;
-	var inactiveBonusDice = player === 0 ? this.redInactiveBonusDice : this.blueInactiveBonusDice;
+ 	var playerHand = player === 0 ? this.redDiceInHand : this.blueDiceInHand;
+ 	var inactiveBonusDice = player === 0 ? this.redInactiveBonusDice : this.blueInactiveBonusDice;
 
 	if (this.bonusDiceDestructionStrategy === settingsConstants.bonusDiceDestructionStrategy.afterReroll) {
 		var toRemove = _.filter(playerHand.children, x => x.isBonus);
@@ -176,22 +186,18 @@ class GameState extends Phaser.State {
 			x.y = this.screenY;
 		});
 
-
 	}
-
+	var didRoll = false;
 	playerHand.forEach((die) => {
-
 		if (die.isBonus != true) {
 			let diceValue = rollDie();
-
+			didRoll = true;
 			var texture = die.key;
 			die.value = diceValue;
 			this.jumpDieToCup(die, player);
 			die.rollAnimation.play(10, true)
 			game.time.events.add(Phaser.Timer.SECOND / 2 + 10 * rollDie(), this.stopDie, this, die);
 		}
-
-
 	});
 
 
@@ -211,12 +217,10 @@ class GameState extends Phaser.State {
 				if(player === this.player) diceToSet.input.draggable = true;
 				this.jumpDieToCup(diceToSet, player);
 			}
-
-
 		}
 	}
 
-
+  if(didRoll) this.rollSound.play();
 }
 
  stopDie(die) {
@@ -396,6 +400,15 @@ class GameState extends Phaser.State {
 	this.redInactiveBonusDice = game.add.group();
 	this.blueInactiveBonusDice = game.add.group();
 
+	//set up audio objects
+	this.errorSound = game.add.audio('error');
+	this.placeSound = game.add.audio('place');
+	this.clashSound = game.add.audio('clash');
+	this.breakSound = game.add.audio('break');
+	this.rollSound = game.add.audio('roll');
+	this.turnSound = game.add.audio('turn');
+	this.victorySound = game.add.audio('victory');
+
 	//draw tiles
 	var col, row;
 	for (col = 0; col < this.boardWidth; col++) {
@@ -535,6 +548,7 @@ class GameState extends Phaser.State {
 }
 
  endPlayerTurn() {
+	this.turnSound.play();
 	this.clearTweens();
 	this.toggleDieInput(this.player, false);
 	this.endTurn.loadTexture("whitePass");
@@ -678,6 +692,7 @@ areDiceOnBoard(){
 					} else {
 						this.redDiceOnBoard.add(sprite);
 					}
+					this.placeSound.play();
 					return;
 				}
 			}
@@ -688,11 +703,13 @@ areDiceOnBoard(){
 		if (!this.overLap(sprite.x, sprite.y, this.diceDim, this.diceDim, this.cupRed.x, this.cupRed.y, this.cupWidth, this.cupHeight)) {
 			sprite.x = this.lastDragStartX;
 			sprite.y = this.lastDragStartY;
+			this.errorSound.play();
 		}
 	} else {
 		if (!this.overLap(sprite.x, sprite.y, this.diceDim, this.diceDim, this.cupBlue.x, this.cupBlue.y, this.cupWidth, this.cupHeight)) {
 			sprite.x = this.lastDragStartX;
 			sprite.y = this.lastDragStartY;
+			this.errorSound.play();
 		}
 	}
 }
@@ -831,9 +848,10 @@ areDiceOnBoard(){
 		angle: 10
 	}, 2000, Phaser.Easing.Quadratic.Out, true, 0, -1, true);
 	game.add.tween(textv.scale).to({
-		x: 1.3,
-		y: 1.3
+		x: 2,
+		y: 2
 	}, 1000, Phaser.Easing.Quadratic.Out, true, 0, -1, true);
+	this.victorySound.play();
 }
 
  checkOverlap(spriteA, spriteB) {
@@ -870,9 +888,11 @@ areDiceOnBoard(){
 		if (sprite.isBonus) {
 			sprite.alpha = 0;
 			this.blueInactiveBonusDice.add(sprite);
+			this.breakSound.play();
 			this.moveBonusDiceSomewhereLessAnnoying(sprite);
 		} else {
 			this.blueDiceInHand.add(sprite);
+			this.clashSound.play();
 			this.jumpDieToCup(sprite, whosCup);
 		}
 
@@ -880,9 +900,11 @@ areDiceOnBoard(){
 		if (sprite.isBonus) {
 			sprite.alpha = 0;
 			this.redInactiveBonusDice.add(sprite);
+			this.breakSound.play();
 			this.moveBonusDiceSomewhereLessAnnoying(sprite);
 		} else {
 			this.redDiceInHand.add(sprite);
+			this.clashSound.play();
 			this.jumpDieToCup(sprite, whosCup);
 		}
 	}
