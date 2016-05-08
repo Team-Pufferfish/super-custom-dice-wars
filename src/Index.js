@@ -23,7 +23,6 @@ var settingsConstants = {
   bonusDiceGenerationStrategy: {
     topPair: "Top pair of dice generates a bonus die",
     topTwoPair: "Top two pairs of dice generate 2 bonus dice (if available)",
-    topTwoPairOrTriple: "Top two pairs of dice generate 2 bonus dice or top triple generates 2 bonus dice"
   },
   bonusDiceDestructionStrategy: {
     afterDeath: "Bonus dice are returned to the inactive pile after they are killed",
@@ -85,10 +84,10 @@ var placementStrategy = settingsConstants.placementStrategy.debug;
 var movementStrategy = settingsConstants.movementStrategy.afterRound;
 var rollDiceStrategy = settingsConstants.rollDiceStrategy.beforeTurn;
 
-var bonusDiceGenerationStrategy = settingsConstants.bonusDiceGenerationStrategy.topTwoPair;
+var bonusDiceGenerationStrategy = settingsConstants.bonusDiceGenerationStrategy.topPair;
 var bonusDiceDestructionStrategy = settingsConstants.bonusDiceDestructionStrategy.afterReroll;
 
-var playerDiceCount = 6;
+var playerDiceCount = 4;
 var playerBonusDiceCount = 2;
 
 //groups
@@ -109,11 +108,25 @@ var player = 0;
 
 function reroll(player){
 
+
   var playerHand = player === 0 ? redDiceInHand : blueDiceInHand;
+  var inactiveBonusDice = player === 0 ? redInactiveBonusDice : blueInactiveBonusDice;
+
+  if (bonusDiceDestructionStrategy === settingsConstants.bonusDiceDestructionStrategy.afterReroll){
+    var toRemove =  _.filter(playerHand.children, x => x.isBonus);
+    _.each(toRemove, x => {
+      playerHand.remove(x)
+      x.alpha = 0;
+      x.input.draggable = false;
+      inactiveBonusDice.add(x);
+    });
+
+
+  }
 
   playerHand.forEach((die) => {
 
-    if (die.bonusDice != true){
+    if (die.isBonus != true){
       let diceValue = rollDie();
 
       var texture = die.key;
@@ -122,10 +135,38 @@ function reroll(player){
       die.frame = diceValue - 1;
     }
 
-
-  var grouped = _.groupBy(playerHand.children,x => x.value)
-  var filtered = _.filter(grouped, x => x.length > 1)
+  /*  bonusDiceGenerationStrategy: {
+      topPair: "Top pair of dice generates a bonus die",
+      topTwoPair: "Top two pairs of dice generate 2 bonus dice (if available)",
+      topTwoPairOrTriple: "Top two pairs of dice generate 2 bonus dice or top triple generates 2 bonus dice"
+    },
+    bonusDiceDestructionStrategy: {
+      afterDeath: "Bonus dice are returned to the inactive pile after they are killed",
+      afterReroll: "Bonus dice are returned to the inactive pile if the dice are rerolled"
+    }*/
   });
+
+
+  if (inactiveBonusDice.children.length > 0){
+    var grouped = _.groupBy(playerHand.children,x => x.value)
+    var filtered = _.filter(grouped, x => x.length > 1)
+
+    if (filtered.length > 0){
+      if (bonusDiceGenerationStrategy === settingsConstants.bonusDiceGenerationStrategy.topPair){
+        var topPairValue = _.maxBy(filtered,x => x[0].value)[0].value;
+        var diceToSet = inactiveBonusDice.children[inactiveBonusDice.children.length - 1];
+        inactiveBonusDice.remove(diceToSet);
+        playerHand.add(diceToSet);
+        diceToSet.alpha = 1;
+        diceToSet.value = topPairValue;
+        diceToSet.frame = topPairValue - 1;
+        diceToSet.input.draggable = true;
+      }
+
+
+  }
+  }
+
 
 }
 
@@ -294,6 +335,7 @@ function create() {
     dice.events.onDragStop.add(onDragStop, this);
     dice.currentTween = null;
     dice.unstopableTween = null;
+
   }
 
   for (i = 0; i < playerBonusDiceCount; i++){
@@ -306,6 +348,14 @@ function create() {
     dice.isBonus = true;
     dice.currentTween = null;
     dice.unstopableTween = null;
+    dice.alpha = 0;
+    dice.inputEnabled = true;
+    dice.input.enableDrag();
+    dice.events.onDragStart.add(onDragStart, this);
+    dice.events.onDragStop.add(onDragStop, this);
+    dice.currentTween = null;
+    dice.unstopableTween = null;
+    dice.input.draggable = false;
   }
 
   //make blueDice
@@ -326,6 +376,7 @@ function create() {
     dice.currentTween = null;
     dice.unstopableTween = null;
     dice.input.draggable = false;
+
   }
 
   for (i = 0; i < playerBonusDiceCount; i++){
@@ -338,9 +389,16 @@ function create() {
     dice.isBonus = true;
     dice.currentTween = null;
     dice.unstopableTween = null;
+    dice.alpha = 0;
+    dice.inputEnabled = true;
+    dice.input.enableDrag();
+    dice.events.onDragStart.add(onDragStart, this);
+    dice.events.onDragStop.add(onDragStop, this);
+    dice.currentTween = null;
+    dice.unstopableTween = null;
+    dice.input.draggable = false;
   }
 
-  reroll(1);
   reroll(0);
 
 
@@ -566,9 +624,20 @@ function stopAndReturnToCup(sprite, whosCup){
   sprite.currentTween = null;
   sprite.parent.remove(sprite);
   if (sprite.uniqueRef.indexOf('blue') > -1){
+    if (sprite.isBonus){
+      sprite.alpha = 0;
+      blueInactiveBonusDice.add(sprite);
+    } else {
       blueDiceInHand.add(sprite);
+    }
+
   } else {
-    redDiceInHand.add(sprite);
+    if (sprite.isBonus){
+      sprite.alpha = 0;
+      redInactiveBonusDice.add(sprite);
+    } else {
+      redDiceInHand.add(sprite);
+    }
   }
   jumpDieToCup(sprite,whosCup);
 }
