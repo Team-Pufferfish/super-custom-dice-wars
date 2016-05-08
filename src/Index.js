@@ -501,7 +501,7 @@ function runBoard(){
 			moveForward(die, 1)
 		});
 	}
-	game.time.events.add(Phaser.Timer.SECOND * 0.6, switchPlayer, this);
+	game.time.events.add(Phaser.Timer.SECOND, switchPlayer, this);
 }
 
 function switchPlayer() {
