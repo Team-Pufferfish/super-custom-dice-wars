@@ -51,6 +51,8 @@ function preload(){
   //TilePieces
   game.load.image('tileRed','dist/images/tileRed.png');
   game.load.image('tileBlue','dist/images/tileBlue.png');
+  game.load.image('tileRedB','dist/images/tileRedB.png');
+  game.load.image('tileBlueB','dist/images/tileBlueB.png');
   game.load.image('tileRedStart','dist/images/tileRedStart.png');
   game.load.image('tileBlueStart','dist/images/tileBlueStart.png');
   game.load.image('tileNeutral','dist/images/tileNeutral.png');
@@ -60,6 +62,8 @@ function preload(){
   //targets
   game.load.image('redTargets','dist/images/tileRedMove.png');
   game.load.image('blueTargets','dist/images/tileBlueMove.png');
+  game.load.image('redTargetsB','dist/images/tileRedMoveB.png');
+  game.load.image('blueTargetsB','dist/images/tileBlueMoveB.png');
 }
 
 var background;
@@ -67,7 +71,7 @@ var cupRed,cupBlue;
 var cupHeight = 200;
 var cupWidth = 450;
 var board;
-var boardHeight = 4;
+var boardHeight = 3;
 var boardWidth = 6;
 var tileDim = 127;
 var diceDim = 85;
@@ -98,13 +102,17 @@ function reroll(player){
 
   playerHand.forEach((die) => {
     let diceValue = rollDie();
-
-    var texture = die.key;
-    jumpDieToCup(die,player);
     die.value = diceValue;
-    die.frame = diceValue - 1;
+    jumpDieToCup(die,player);
+    die.rollAnimation.play(10,true)
+    game.time.events.add(Phaser.Timer.SECOND/2 + 10 * rollDie(), stopDie, this, die);
   });
 
+}
+
+function stopDie(die){
+  die.rollAnimation.stop();
+  die.frame = die.value - 1;
 }
 
 function posToRowHeight(pos){
@@ -221,19 +229,25 @@ function create() {
       else if (col === boardWidth - 1)
         spriteimage = "tileBlueStart";
       else if (col < boardWidth/2)
-        spriteimage = "tileRed";
+      {
+        spriteimage = ( false) ? "tileRed" : "tileRedB";
+      }
       else if (col >= boardWidth/2)
-        spriteimage = "tileBlue";
-      //console.log("X:" + spriteX + " Y:" +spriteY+ " S:" + spriteimage);
+      {
+        spriteimage = ( false ) ? "tileBlue" : "tileBlueB";
+      }
+      console.log(col%2 + ', ' + row%2);
       tiles.create(spriteX,spriteY,spriteimage);
       if (col !== boardWidth-1){
-        var temp = redTargets.create(spriteX,spriteY,"redTargets");
+        let targetTex = (col === 0) ? "redTargets" : "redTargetsB";
+        var temp = redTargets.create(spriteX,spriteY,targetTex);
         temp.uniqueRef = "T" + col + row;
         temp.col = col;
         temp.row = row;
         temp.pos = rowColToPos(row,col);
       }if(col !== 0){
-        var temp = blueTargets.create(spriteX,spriteY,"blueTargets");
+        let targetTex = (col === boardWidth-1) ? "blueTargets" : "blueTargetsB";
+        var temp = blueTargets.create(spriteX,spriteY,targetTex);
         temp.col = col;
         temp.row = row;
         temp.pos = rowColToPos(row,col);
@@ -262,6 +276,8 @@ function create() {
     dice.events.onDragStop.add(onDragStop, this);
     dice.currentTween = null;
     dice.unstopableTween = null;
+
+    dice.rollAnimation = dice.animations.add("roll");
   }
 
   let blueRollButton = endTurn = game.add.text(cupBlue.x + 20,cupBlue.y + 150, "ROLL",styleBlue);
@@ -293,6 +309,8 @@ function create() {
     dice.currentTween = null;
     dice.unstopableTween = null;
     dice.input.draggable = false;
+
+    dice.rollAnimation = dice.animations.add("roll");
   }
   //End Turn Button
   endTurn = game.add.text(game.world.centerX-10,screenY - cupHeight/2, "End Turn",styleRed);
@@ -455,9 +473,7 @@ function moveForward(dieSprite, whoOwns){
 }
 
 function didCompleteMoveTween(sprite){
-  console.log(sprite.col);
   sprite.col += sprite.direction;
-  console.log(sprite.col);
   sprite.pos = rowColToPos(sprite.row,sprite.col);
 }
 
