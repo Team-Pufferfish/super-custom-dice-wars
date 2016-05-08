@@ -83,8 +83,8 @@ class GameState extends Phaser.State {
 		this.cupHeight = 200;
 		this.cupWidth = 450;
 		this.board;
-		this.boardHeight = 3;
-		this.boardWidth = 6;
+		this.boardHeight = 4;
+		this.boardWidth = 8;
 		this.tileDim = 127;
 		this.diceDim = 85;
 		this.gameOver = false;
@@ -92,7 +92,7 @@ class GameState extends Phaser.State {
 		this.screenY = 768;
 		this.endTurn;
 
-		this.placementStrategy = settingsConstants.placementStrategy.behindAny;
+		this.placementStrategy = settingsConstants.placementStrategy.debug;
 		this.movementStrategy = settingsConstants.movementStrategy.afterRound;
 		this.rollDiceStrategy = settingsConstants.rollDiceStrategy.beforeTurn;
 
@@ -135,6 +135,7 @@ class GameState extends Phaser.State {
 		//Background
 		game.load.image('background', 'dist/images/wood.jpg');
 		game.load.image('cups', 'dist/images/cups.png');
+		game.load.image('cupsBlue', 'dist/images/cupsBlue.png');
 		//TilePieces
 		game.load.image('tileRed', 'dist/images/tileRed.png');
 		game.load.image('tileBlue', 'dist/images/tileBlue.png');
@@ -384,7 +385,7 @@ class GameState extends Phaser.State {
 	//this.background.filters = [ this.backGroundFilter ];
 
 	this.cupRed = game.add.image(0, screenY - this.cupHeight, 'cups');
-	this.cupBlue = game.add.image(screenX - this.cupWidth, screenY - this.cupHeight, "cups");
+	this.cupBlue = game.add.image(screenX - this.cupWidth, screenY - this.cupHeight, "cupsBlue");
 
 	//groups
 	this.tiles = game.add.group();
@@ -426,7 +427,7 @@ class GameState extends Phaser.State {
 			} else if (col >= this.boardWidth / 2) {
 				spriteimage = (false) ? "tileBlue" : "tileBlueB";
 			}
-	
+
 			this.tiles.create(spriteX, spriteY, spriteimage);
 			if (col !== this.boardWidth - 1) {
 				let targetTex = (col === 0) ? "redTargets" : "redTargetsB";
@@ -829,12 +830,15 @@ areDiceOnBoard(){
 	this.toggleDieInput(1, false);
 	this.endTurn.inputEnabled = false;
 	var style = styleDraw;
+	var smallStyle = styleWhite;
 	var name = "Nobody";
 	if (victory === 0) {
 		style = styleRedVictory;
+		smallStyle = styleRed;
 		name = "Red";
 	} else if (victory === 1) {
 		style = styleBlueVictory;
+		smallStyle = styleBlue;
 		name = "Blue"
 	}
 	var victoryTest = name + " Wins!";
@@ -851,6 +855,9 @@ areDiceOnBoard(){
 		x: 2,
 		y: 2
 	}, 1000, Phaser.Easing.Quadratic.Out, true, 0, -1, true);
+	var restart = game.add.text(game.world.centerX, game.world.centerY + 100,"RESTART", smallStyle);
+	restart.inputEnabled = true;
+	restart.events.onInputDown.add(function() { game.state.start("Game"); });
 	this.victorySound.play();
 }
 
@@ -934,5 +941,5 @@ moveBonusDiceSomewhereLessAnnoying(dice){
 
 var game = new Phaser.Game(screenX, screenY, Phaser.Canvas, 'cube-party');
 
-game.state.add("Game",GameState,false);
+game.state.add("Game",GameState,false,false);
 game.state.start("Game");
