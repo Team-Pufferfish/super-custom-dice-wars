@@ -1117,7 +1117,10 @@ areDiceOnBoard(){
 		x: 2,
 		y: 2
 	}, 1000, Phaser.Easing.Quadratic.Out, true, 0, -1, true);
-	var restart = game.add.text(game.world.centerX, game.world.centerY + 100,"RESTART", smallStyle);
+	var restart = game.add.text(game.world.centerX, game.world.centerY + 100 ,"Click to Restart", {	font: "65px Arial",
+		fill: "#FFFFFF",
+		align: "center"});
+		restart.anchor.x = 0.5;
 	restart.inputEnabled = true;
 	restart.events.onInputDown.add(function() { game.state.start("Config"); });
 	this.victorySound.play();
