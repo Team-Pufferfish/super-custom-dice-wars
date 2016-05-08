@@ -1122,7 +1122,7 @@ areDiceOnBoard(){
 		align: "center"});
 		restart.anchor.x = 0.5;
 	restart.inputEnabled = true;
-	restart.events.onInputDown.add(function() { game.state.start("Config"); });
+	restart.events.onInputDown.add(function() { game.state.start("Menu"); });
 	this.victorySound.play();
 }
 
