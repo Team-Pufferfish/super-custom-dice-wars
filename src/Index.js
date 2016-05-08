@@ -80,7 +80,7 @@ var endTurn;
 var placementStrategy = settingsConstants.placementStrategy.behindAny;
 var movementStrategy = settingsConstants.movementStrategy.afterRound;
 var rollDiceStrategy = settingsConstants.rollDiceStrategy.beforeTurn;
-var playerDiceCount = 6;
+var playerDiceCount = 4;
 var playerBonusDiceCount = 2;
 
 //groups
@@ -467,9 +467,9 @@ function moveForward(dieSprite, whoOwns){
   dieSprite.pos = rowColToPos(dieSprite.row,dieSprite.col);
   var dest = dieSprite.x +  direction * (tileDim);
   //game.physics.arcade.accelerateToXY(dieSprite,dest,dieSprite.y);
-  dieSprite.currentTween = game.add.tween(dieSprite).to({x:dest}, 250, Phaser.Easing.Cubic.In, true);
+  dieSprite.currentTween = game.add.tween(dieSprite).to({x:dest}, 500, Phaser.Easing.Cubic.In, true);
   dieSprite.currentTween.onComplete.add(didCompleteMoveTween, dieSprite);
-  game.add.tween(dieSprite).to({angle:-5*direction}, 125, Phaser.Easing.Quadratic.InOut, true, 0, 0, true);
+  game.add.tween(dieSprite).to({angle:-5*direction}, 250, Phaser.Easing.Quadratic.InOut, true, 0, 0, true);
 }
 
 function didCompleteMoveTween(sprite){
@@ -512,6 +512,8 @@ function update(){
     gameOver = true;
   }
 }else{
+  toggleDieInput(0,false);
+  toggleDieInput(1,false);
   endTurn.inputEnabled = false;
 }
 }
