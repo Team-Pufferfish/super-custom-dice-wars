@@ -426,7 +426,7 @@ class GameState extends Phaser.State {
 			} else if (col >= this.boardWidth / 2) {
 				spriteimage = (false) ? "tileBlue" : "tileBlueB";
 			}
-			console.log(col % 2 + ', ' + row % 2);
+	
 			this.tiles.create(spriteX, spriteY, spriteimage);
 			if (col !== this.boardWidth - 1) {
 				let targetTex = (col === 0) ? "redTargets" : "redTargetsB";
