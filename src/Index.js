@@ -445,12 +445,20 @@ function moveForward(dieSprite, whoOwns){
   var direction = 1
   if(whoOwns != 0) direction = -1;
 
-  dieSprite.col += direction;
+  dieSprite.direction = direction;
   dieSprite.pos = rowColToPos(dieSprite.row,dieSprite.col);
   var dest = dieSprite.x +  direction * (tileDim);
   //game.physics.arcade.accelerateToXY(dieSprite,dest,dieSprite.y);
   dieSprite.currentTween = game.add.tween(dieSprite).to({x:dest}, 250, Phaser.Easing.Cubic.In, true);
+  dieSprite.currentTween.onComplete.add(didCompleteMoveTween, dieSprite);
   game.add.tween(dieSprite).to({angle:-5*direction}, 125, Phaser.Easing.Quadratic.InOut, true, 0, 0, true);
+}
+
+function didCompleteMoveTween(sprite){
+  console.log(sprite.col);
+  sprite.col += sprite.direction;
+  console.log(sprite.col);
+  sprite.pos = rowColToPos(sprite.row,sprite.col);
 }
 
 function inBounds(x,y,w,h,bx,by,bw,bh){
