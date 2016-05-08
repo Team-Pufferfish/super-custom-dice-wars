@@ -92,7 +92,7 @@ class GameState extends Phaser.State {
 		this.screenY = 768;
 		this.endTurn;
 
-		this.placementStrategy = settingsConstants.placementStrategy.debug;
+		this.placementStrategy = settingsConstants.placementStrategy.behindAny;
 		this.movementStrategy = settingsConstants.movementStrategy.afterRound;
 		this.rollDiceStrategy = settingsConstants.rollDiceStrategy.beforeTurn;
 
@@ -870,19 +870,28 @@ areDiceOnBoard(){
 		if (sprite.isBonus) {
 			sprite.alpha = 0;
 			this.blueInactiveBonusDice.add(sprite);
+			this.moveBonusDiceSomewhereLessAnnoying(sprite);
 		} else {
 			this.blueDiceInHand.add(sprite);
+			this.jumpDieToCup(sprite, whosCup);
 		}
 
 	} else {
 		if (sprite.isBonus) {
 			sprite.alpha = 0;
 			this.redInactiveBonusDice.add(sprite);
+			this.moveBonusDiceSomewhereLessAnnoying(sprite);
 		} else {
 			this.redDiceInHand.add(sprite);
+			this.jumpDieToCup(sprite, whosCup);
 		}
 	}
-	this.jumpDieToCup(sprite, whosCup);
+
+}
+
+moveBonusDiceSomewhereLessAnnoying(dice){
+	dice.x = game.world.centerX - Math.floor(this.diceDim / 2);
+	dice.y = this.screenY;
 }
 
  resolveConflict(red, blue) {
