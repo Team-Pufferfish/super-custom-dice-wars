@@ -370,7 +370,6 @@ function create() {
     dice.events.onDragStart.add(onDragStart, this);
     dice.events.onDragStop.add(onDragStop, this);
     dice.currentTween = null;
-    dice.unstopableTween = null;
     dice.input.draggable = false;
     dice.x = game.world.centerX - Math.floor(diceDim / 2);
     dice.y = screenY;
@@ -414,15 +413,13 @@ function create() {
     dice.events.onDragStart.add(onDragStart, this);
     dice.events.onDragStop.add(onDragStop, this);
     dice.currentTween = null;
-    dice.unstopableTween = null;
     dice.input.draggable = false;
     dice.x = game.world.centerX - Math.floor(diceDim / 2);
     dice.y = screenY;
   }
 
   reroll(0);
-
-
+  clearTweens();
   //End Turn Button
   endTurn = game.add.text(game.world.centerX-10,screenY - cupHeight/2, "End Turn",styleRed);
   endTurn.inputEnabled = true;
