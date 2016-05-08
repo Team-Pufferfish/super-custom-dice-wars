@@ -3,29 +3,33 @@ import _ from 'lodash';
 
 var settingsConstants = {
 	placementStrategy: {
-		behindAny: "Any free spot behind a friendly die",
-		behindOne: "First free spot behind a friendly die",
-		reinforceLineOne: "First free spot behind center line",
-		reinforceLineAny: "Any free spot behind center line",
-		homeRowOnly: "Only in base",
-		debug: "Can place everywhere"
+		behindAny: "any free spot behind a friendly die",
+		behindOne: "the first free spot behind a friendly die",
+		reinforceLineOne: "the first free spot behind center line",
+		reinforceLineAny: "any free spot behind center line",
+		homeRowOnly: "only in base",
+		debug: "anywhere for debug purposes"
 	},
 	movementStrategy: {
-		afterPlayer: "Moves current player's dice after their turn",
-		afterTurn: "Moves both player's dice after each turn",
-		afterRound: "Moves dice after each round"
+		afterPlayer: "after their turn",
+		afterTurn: "after each turn",
+		afterRound: "after each round"
 	},
 	rollDiceStrategy: {
-		afterTurn: "Roll dice after each player's turn",
-		afterRound: "Roll both player's dice after each round",
-		beforeTurn: "Roll dice before each player's turn"
+		afterTurn: "after each player's turn",
+		afterRound: "after each round",
+		beforeTurn: "before each player's turn"
 	},
+	diceRollCount: [3,4,5],
+	boardColumnCount: [4,6,8],
+	boardRowCount: [2,3,4],
+
 	bonusDiceGenerationStrategy: {
 		topPair: "Top pair of dice generates a bonus die",
 		topTwoPair: "Top two pairs of dice generate 2 bonus dice (if available)",
 	},
 	bonusDiceDestructionStrategy: {
-		afterDeath: "Bonus dice are returned to the inactive pile after they are killed",
+		afterDeath: "Bonus dice are returned to the inactive pile only after they are killed",
 		afterReroll: "Bonus dice are returned to the inactive pile if the dice are rerolled"
 	}
 }
@@ -70,20 +74,189 @@ var screenX = 1024;
 var screenY = 768;
 
 
+class ConfigState extends Phaser.State {
+	init() {
+		this.selectedConfiguration = {
+			placementStrategy: "behindAny",
+			movementStrategy: "afterTurn",
+			rollDiceStrategy: "beforeTurn",
+			diceRollCount: 4,
+			bonusDiceGenerationStrategy: "topTwoPair",
+			bonusDiceCount: 2,
+			bonusDiceDestructionStrategy: "afterReroll",
+			boardColumnCount: 6,
+			boardRowCount: 3
+		}
+	}
 
+	createOptionLine(x,y,textLine,replacementChar,strategies,strategyResults){
+		var splitString = _.split(textLine,replacementChar);
+
+		let LastText = null;
+
+		splitString.forEach((string,index) => {
+
+			var stratText = strategies[index];
+			var stratResult = strategyResults[index];
+
+
+					let regularText;
+					if (LastText === null){
+						regularText = game.add.text(x,y,string,{
+							font: "30px Arial", fill: "#fff"});
+					} else {
+						regularText = game.make.text(x,y,string,{
+							font: "30px Arial", fill: "#fff"});
+						LastText.addChild(regularText);
+					}
+
+				let interactiveText = game.make.text(regularText.width,0,this.selectedConfiguration[stratResult],{
+					font: "30px Arial", fill: "#ff0044"})
+					regularText.addChild(interactiveText);
+					interactiveText.inputEnabled = true;
+					interactiveText.events.onInputDown.add(x => {
+
+						if (_.isPlainObject(stratText)){
+							let nextText = (stratText.indexOf(this.selectedConfiguration[stratResult]) + 1) % stratText.length;
+							x.text = stratText[nextText];
+							this.selectedConfiguration[stratResult] = stratText[nextText];
+						}
+
+						if (_.isArray(stratText)){
+							let nextText = (stratText.indexOf(this.selectedConfiguration[stratResult]) + 1) % stratText.length;
+							x.text = stratText[nextText];
+							this.selectedConfiguration[stratResult] = stratText[nextText];
+						}
+					},this);
+
+					LastText = interactiveText;
+
+		});
+	}
+
+	create() {
+
+	//	this.createOptionLine(0,100,"you roll % dice %",'%',settingsConstants.diceRollCount,settingsConstants.rollDiceStrategy,["diceRollCount","rollDiceStrategy"])
+
+		var gametopText = game.add.text(game.world.centerX, 30,"Click on red text to configure",{
+			font: "30px Arial", fill: "#fff"})
+		gametopText.anchor.x = 0.5;
+		gametopText.anchor.y = 0; //](1,0.5);
+		gametopText.inputEnabled = true;
+		gametopText.input.enableDrag();
+
+		var regularText = game.add.text(20,70,"You roll ",{font: "30px Arial", fill: "#fff"});
+		var interactiveText = game.add.text(regularText.width + regularText.x,regularText.y,this.selectedConfiguration.diceRollCount,{font: "30px Arial", fill: "#ff0044"})
+
+		interactiveText.inputEnabled = true;
+		interactiveText.events.onInputDown.add(x => {
+			let currentIndex = settingsConstants.diceRollCount.indexOf(this.selectedConfiguration.diceRollCount);
+			let nextIndex = (currentIndex + 1) % settingsConstants.diceRollCount.length;
+			x.text = this.selectedConfiguration.diceRollCount = settingsConstants.diceRollCount[nextIndex];
+		},this);
+
+		regularText = game.add.text(interactiveText.x + interactiveText.width,interactiveText.y," dice ",{font: "30px Arial", fill: "#fff"});
+		interactiveText = game.add.text(regularText.width + regularText.x,regularText.y,settingsConstants.rollDiceStrategy[this.selectedConfiguration.rollDiceStrategy],{font: "30px Arial", fill: "#ff0044"})
+		interactiveText.inputEnabled = true;
+		interactiveText.events.onInputDown.add(x => {
+
+			var keys = _.keys(settingsConstants.rollDiceStrategy);
+			let currentIndex = keys.indexOf(this.selectedConfiguration.rollDiceStrategy);
+			let nextIndex = (currentIndex + 1) % keys.length;
+			this.selectedConfiguration.rollDiceStrategy = keys[nextIndex];
+			x.text = settingsConstants.rollDiceStrategy[this.selectedConfiguration.rollDiceStrategy];
+		},this);
+
+		var regularText = game.add.text(20,120,"Player's dice move ",{font: "30px Arial", fill: "#fff"});
+		var interactiveText = game.add.text(regularText.width + regularText.x,regularText.y,settingsConstants.movementStrategy[this.selectedConfiguration.movementStrategy],{font: "30px Arial", fill: "#ff0044"})
+
+		interactiveText.inputEnabled = true;
+		interactiveText.events.onInputDown.add(x => {
+
+			var keys = _.keys(settingsConstants.movementStrategy);
+			let currentIndex = keys.indexOf(this.selectedConfiguration.movementStrategy);
+			let nextIndex = (currentIndex + 1) % keys.length;
+			this.selectedConfiguration.movementStrategy = keys[nextIndex];
+			x.text = settingsConstants.movementStrategy[this.selectedConfiguration.movementStrategy];
+		},this);
+
+		var regularText = game.add.text(20,170,"You can place your dice on ",{font: "30px Arial", fill: "#fff"});
+		var interactiveText = game.add.text(regularText.width + regularText.x,regularText.y,settingsConstants.placementStrategy[this.selectedConfiguration.placementStrategy],{font: "30px Arial", fill: "#ff0044"})
+
+		interactiveText.inputEnabled = true;
+		interactiveText.events.onInputDown.add(x => {
+
+			var keys = _.keys(settingsConstants.placementStrategy);
+			let currentIndex = keys.indexOf(this.selectedConfiguration.placementStrategy);
+			let nextIndex = (currentIndex + 1) % keys.length;
+			this.selectedConfiguration.placementStrategy = keys[nextIndex];
+			x.text = settingsConstants.placementStrategy[this.selectedConfiguration.placementStrategy];
+		},this);
+
+		var regularText = game.add.text(20,220,"You can generate a maximum of 2 bonus dice every turn",{font: "30px Arial", fill: "#fff"});
+		var regularText = game.add.text(20,270,"You can only have 2 bonus dice in play at any time",{font: "30px Arial", fill: "#fff"});
+
+		var interactiveText = game.add.text(20,320,settingsConstants.bonusDiceDestructionStrategy[this.selectedConfiguration.bonusDiceDestructionStrategy],{font: "30px Arial", fill: "#ff0044"})
+
+		interactiveText.inputEnabled = true;
+		interactiveText.events.onInputDown.add(x => {
+
+			var keys = _.keys(settingsConstants.bonusDiceDestructionStrategy);
+			let currentIndex = keys.indexOf(this.selectedConfiguration.bonusDiceDestructionStrategy);
+			let nextIndex = (currentIndex + 1) % keys.length;
+			this.selectedConfiguration.bonusDiceDestructionStrategy = keys[nextIndex];
+			x.text = settingsConstants.bonusDiceDestructionStrategy[this.selectedConfiguration.bonusDiceDestructionStrategy];
+		},this);
+
+
+
+
+
+		var regularText = game.add.text(20,370,"The board is ",{font: "30px Arial", fill: "#fff"});
+		var interactiveText = game.add.text(regularText.width + regularText.x,regularText.y,this.selectedConfiguration.boardColumnCount,{font: "30px Arial", fill: "#ff0044"})
+
+		interactiveText.inputEnabled = true;
+		interactiveText.events.onInputDown.add(x => {
+			let currentIndex = settingsConstants.boardColumnCount.indexOf(this.selectedConfiguration.boardColumnCount);
+			let nextIndex = (currentIndex + 1) % settingsConstants.boardColumnCount.length;
+			x.text = this.selectedConfiguration.boardColumnCount = settingsConstants.boardColumnCount[nextIndex];
+		},this);
+
+		regularText = game.add.text(interactiveText.x + interactiveText.width,interactiveText.y," columns wide and ",{font: "30px Arial", fill: "#fff"});
+		var interactiveText = game.add.text(regularText.width + regularText.x,regularText.y,this.selectedConfiguration.boardRowCount,{font: "30px Arial", fill: "#ff0044"})
+
+		interactiveText.inputEnabled = true;
+		interactiveText.events.onInputDown.add(x => {
+			let currentIndex = settingsConstants.boardRowCount.indexOf(this.selectedConfiguration.boardRowCount);
+			let nextIndex = (currentIndex + 1) % settingsConstants.boardRowCount.length;
+			x.text = this.selectedConfiguration.boardRowCount = settingsConstants.boardRowCount[nextIndex];
+		},this);
+
+		regularText = game.add.text(interactiveText.x + interactiveText.width,interactiveText.y," rows tall",{font: "30px Arial", fill: "#fff"});
+
+		regularText = game.add.text(420,game.world.centerX," START ",{font: "60px Arial", fill: "#fff"});
+		regularText.inputEnabled = true;
+		regularText.events.onInputDown.add(x => {
+			game.state.start("Game",true,false,this.selectedConfiguration);
+		});
+
+
+}
+
+}
 
 class GameState extends Phaser.State {
 
-	constructor() {
-		super()
+	init(config) {
+		//super()
 		this.background;
 		this.cupRed;
 		this.cupBlue;
 		this.cupHeight = 200;
 		this.cupWidth = 450;
 		this.board;
-		this.boardHeight = 3;
-		this.boardWidth = 6;
+		this.boardHeight = config.boardRowCount;
+		this.boardWidth = config.boardColumnCount;
 		this.tileDim = 127;
 		this.diceDim = 85;
 		this.gameOver = false;
@@ -91,15 +264,15 @@ class GameState extends Phaser.State {
 		this.screenY = 768;
 		this.endTurn;
 
-		this.placementStrategy = settingsConstants.placementStrategy.debug;
-		this.movementStrategy = settingsConstants.movementStrategy.afterRound;
-		this.rollDiceStrategy = settingsConstants.rollDiceStrategy.beforeTurn;
+		this.placementStrategy = settingsConstants.placementStrategy[config.placementStrategy];
+		this.movementStrategy = settingsConstants.movementStrategy[config.movementStrategy];
+		this.rollDiceStrategy = settingsConstants.rollDiceStrategy[config.rollDiceStrategy];
 
-		this.bonusDiceGenerationStrategy = settingsConstants.bonusDiceGenerationStrategy.topPair;
-		this.bonusDiceDestructionStrategy = settingsConstants.bonusDiceDestructionStrategy.afterReroll;
+		this.bonusDiceGenerationStrategy = settingsConstants.bonusDiceGenerationStrategy[config.bonusDiceGenerationStrategy];
+		this.bonusDiceDestructionStrategy = settingsConstants.bonusDiceDestructionStrategy[config.bonusDiceDestructionStrategy];
 
-		this.playerDiceCount = 4;
-		this.playerBonusDiceCount = 2;
+		this.playerDiceCount = config.diceRollCount;
+		this.playerBonusDiceCount = config.bonusDiceCount;
 
 		//groups
 		this.tiles;
@@ -824,4 +997,5 @@ class GameState extends Phaser.State {
 var game = new Phaser.Game(screenX, screenY, Phaser.Canvas, 'cube-party');
 
 game.state.add("Game",GameState,false);
-game.state.start("Game");
+game.state.add("Config",ConfigState,false);
+game.state.start("Config");
