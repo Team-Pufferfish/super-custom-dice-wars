@@ -258,7 +258,7 @@ class ConfigState extends Phaser.State {
 	}
 
 	create() {
-		game.add.sprite(0, 0, "background");
+		//game.add.sprite(0, 0, "background");
 	//	this.createOptionLine(0,100,"you roll % dice %",'%',settingsConstants.diceRollCount,settingsConstants.rollDiceStrategy,["diceRollCount","rollDiceStrategy"])
 
 		var gametopText = game.add.text(game.world.centerX, 30,"Click on red text to configure",{
@@ -648,6 +648,13 @@ class GameState extends Phaser.State {
 
 	this.cupRed = game.add.image(0, screenY - this.cupHeight, 'cups');
 	this.cupBlue = game.add.image(screenX - this.cupWidth, screenY - this.cupHeight, "cupsBlue");
+
+	//return to main Menu
+	var start = game.add.text(game.width, 0,"RESET",{
+		font: "30px Arial", fill: "#000"});
+		start.anchor.set(1,0);
+		start.inputEnabled = true;
+		start.events.onInputDown.add(function() { game.state.start("Menu"); });
 
 	//groups
 	this.tiles = game.add.group();
