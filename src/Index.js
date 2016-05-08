@@ -120,8 +120,6 @@ class GameState extends Phaser.State {
 
 		this.lastDragStartX;
 		this.lastDragStartY;
-
-
 	}
 
 	preload() {
@@ -146,6 +144,10 @@ class GameState extends Phaser.State {
 		game.load.image('blueTargets', 'dist/images/tileBlueMove.png');
 		game.load.image('redTargetsB', 'dist/images/tileRedMoveB.png');
 		game.load.image('blueTargetsB', 'dist/images/tileBlueMoveB.png');
+
+		game.load.image('redPass','dist/images/RedPass.png');
+		game.load.image('bluePass','dist/images/BluePass.png');
+		game.load.image('whitePass','dist/images/RunBoard.png');
 	}
 	setText(text) {
 		text.setText("- You have clicked -\n" + store.getState().appstate + " times !");
@@ -463,7 +465,9 @@ class GameState extends Phaser.State {
 	this.reroll(1);
 	this.clearTweens();
 	//End Turn Button
-	this.endTurn = game.add.text(game.world.centerX - 10, this.screenY - this.cupHeight / 2, "End Turn", styleRed);
+	//this.endTurn = game.add.sprite(game.world.centerX - 10, this.screenY - this.cupHeight / 2, "End Turn", styleRed);
+	this.endTurn = game.add.sprite(game.world.centerX, this.screenY - this.cupHeight / 2, 'redPass');
+	this.endTurn.anchor.set(0.5);
 	this.endTurn.inputEnabled = true;
 
 	this.endTurn.events.onInputDown.add(() => {
@@ -474,7 +478,8 @@ class GameState extends Phaser.State {
  endPlayerTurn() {
 	this.clearTweens();
 	this.toggleDieInput(this.player, false);
-	this.endTurn.setStyle(styleWhite);
+	this.endTurn.loadTexture("whitePass");
+	this.endTurn.spinning = game.add.tween(this.endTurn).to({angle: 359}, 500, null, true, 0, Infinity);
 	this.endTurn.inputEnabled = false;
 
 	if (this.rollDiceStrategy === settingsConstants.rollDiceStrategy.afterTurn) {
@@ -491,31 +496,43 @@ class GameState extends Phaser.State {
 
  runBoard(){
 	this.clearTweens();
-	if (this.movementStrategy === settingsConstants.movementStrategy.afterPlayer) {
+	var needsRun = this.areDiceOnBoard();
+	if (this.movementStrategy === settingsConstants.movementStrategy.afterPlayer && needsRun) {
 		if (this.player === 0) this.redDiceOnBoard.forEach(function(die) {
 			this.moveForward(die, 0)
 		}.bind(this));
 		if (this.player === 1) this.blueDiceOnBoard.forEach(function(die) {
 			this.moveForward(die, 1)
 		}.bind(this));
-	}
-	if (this.movementStrategy === settingsConstants.movementStrategy.afterTurn) {
+		game.time.events.add(Phaser.Timer.SECOND, this.switchPlayer, this);
+	}else if (this.movementStrategy === settingsConstants.movementStrategy.afterTurn && needsRun) {
 		this.redDiceOnBoard.forEach(function(die) {
 			this.moveForward(die, 0)
 		}.bind(this));
 		this.blueDiceOnBoard.forEach(function(die) {
 			this.moveForward(die, 1)
 		}.bind(this));
-	}
-	if (this.movementStrategy === settingsConstants.movementStrategy.afterRound && this.player === 1) {
+		game.time.events.add(Phaser.Timer.SECOND, this.switchPlayer, this);
+	}else if (this.movementStrategy === settingsConstants.movementStrategy.afterRound && this.player === 1 && needsRun) {
 		this.redDiceOnBoard.forEach(function(die) {
 			this.moveForward(die, 0)
 		}.bind(this));
 		this.blueDiceOnBoard.forEach(function(die) {
 			this.moveForward(die, 1)
 		}.bind(this));
+		game.time.events.add(Phaser.Timer.SECOND, this.switchPlayer, this);
+	}else{
+		this.switchPlayer();
 	}
-	game.time.events.add(Phaser.Timer.SECOND, this.switchPlayer, this);
+
+}
+
+areDiceOnBoard(){
+	if(this.redDiceOnBoard.children.length != 0 || this.blueDiceOnBoard.children.length != 0){
+		return true;
+	}else{
+		return false;
+	}
 }
 
  switchPlayer() {
@@ -532,10 +549,13 @@ class GameState extends Phaser.State {
  startTurn(){
 	this.clearTweens();
 	this.toggleDieInput(this.player, true);
+ 	this.endTurn.spinning.stop();
+	this.endTurn.spinning = null;
+	this.endTurn.angle = 0;
 	if (this.player === 0)
-		this.endTurn.setStyle(styleRed);
+		this.endTurn.loadTexture("redPass");
 	else
-		this.endTurn.setStyle(styleBlue);
+		this.endTurn.loadTexture("bluePass");
 	this.endTurn.inputEnabled = true;
 }
 
