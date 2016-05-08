@@ -7,7 +7,8 @@ var settingsConstants = {
     behindOne: "First free spot behind a friendly die",
     reinforceLineOne: "First free spot behind center line",
     reinforceLineAny: "Any free spot behind center line",
-    homeRowOnly: "Only in base"
+    homeRowOnly: "Only in base",
+    debug: "Can place everywhere"
   },
   movementStrategy: {
     afterPlayer: "Moves current player's dice after their turn",
@@ -18,9 +19,16 @@ var settingsConstants = {
     afterTurn: "Roll dice after each player's turn",
     afterRound: "Roll both player's dice after each round",
     beforeTurn: "Roll dice before each player's turn"
+  },
+  bonusDiceGenerationStrategy: {
+    topPair: "Top pair of dice generates a bonus die",
+    topTwoPair: "Top two pairs of dice generate 2 bonus dice (if available)",
+  },
+  bonusDiceDestructionStrategy: {
+    afterDeath: "Bonus dice are returned to the inactive pile after they are killed",
+    afterReroll: "Bonus dice are returned to the inactive pile if the dice are rerolled"
   }
 }
-
 
 global.PIXI = require('../node_modules/phaser-shim/dist/pixi');
 global.Phaser = require('../node_modules/phaser-shim/dist/phaser');
@@ -59,6 +67,8 @@ function preload(){
   //dice
   game.load.spritesheet('redDice',"dist/images/DieRed.png",85,85,6);
   game.load.spritesheet('blueDice',"dist/images/DieBlue.png",85,85,6);
+  game.load.spritesheet('redBonusDice',"dist/images/DieGlassRed.png",85,85,6);
+  game.load.spritesheet('blueBonusDice',"dist/images/DieGlassBlue.png",85,85,6);
   //targets
   game.load.image('redTargets','dist/images/tileRedMove.png');
   game.load.image('blueTargets','dist/images/tileBlueMove.png');
@@ -77,9 +87,14 @@ var tileDim = 127;
 var diceDim = 85;
 
 var endTurn;
-var placementStrategy = settingsConstants.placementStrategy.behindAny;
+
+var placementStrategy = settingsConstants.placementStrategy.debug;
 var movementStrategy = settingsConstants.movementStrategy.afterRound;
 var rollDiceStrategy = settingsConstants.rollDiceStrategy.beforeTurn;
+
+var bonusDiceGenerationStrategy = settingsConstants.bonusDiceGenerationStrategy.topPair;
+var bonusDiceDestructionStrategy = settingsConstants.bonusDiceDestructionStrategy.afterReroll;
+
 var playerDiceCount = 4;
 var playerBonusDiceCount = 2;
 
@@ -90,6 +105,9 @@ var blueTargets;
 var redDiceInHand;
 var blueDiceInHand;
 
+var redInactiveBonusDice;
+var blueInactiveBonusDice;
+
 var blueDiceOnBoard;
 var redDiceOnBoard;
 
@@ -98,15 +116,61 @@ var player = 0;
 
 function reroll(player){
 
+
   var playerHand = player === 0 ? redDiceInHand : blueDiceInHand;
+  var inactiveBonusDice = player === 0 ? redInactiveBonusDice : blueInactiveBonusDice;
+
+  if (bonusDiceDestructionStrategy === settingsConstants.bonusDiceDestructionStrategy.afterReroll){
+    var toRemove =  _.filter(playerHand.children, x => x.isBonus);
+    _.each(toRemove, x => {
+      playerHand.remove(x)
+      x.alpha = 0;
+      x.input.draggable = false;
+      inactiveBonusDice.add(x);
+      x.x = game.world.centerX - Math.floor(diceDim / 2);
+      x.y = screenY;
+    });
+
+
+  }
 
   playerHand.forEach((die) => {
-    let diceValue = rollDie();
-    die.value = diceValue;
-    jumpDieToCup(die,player);
-    die.rollAnimation.play(10,true)
-    game.time.events.add(Phaser.Timer.SECOND/2 + 10 * rollDie(), stopDie, this, die);
+
+    if (die.isBonus != true){
+      let diceValue = rollDie();
+
+      var texture = die.key;
+      die.value = diceValue;
+      jumpDieToCup(die,player);
+      die.rollAnimation.play(10,true)
+      game.time.events.add(Phaser.Timer.SECOND/2 + 10 * rollDie(), stopDie, this, die);
+    }
+
+
   });
+
+
+  if (inactiveBonusDice.children.length > 0){
+    var grouped = _.groupBy(playerHand.children,x => x.value)
+    var filtered = _.filter(grouped, x => x.length > 1)
+
+    if (filtered.length > 0){
+      if (bonusDiceGenerationStrategy === settingsConstants.bonusDiceGenerationStrategy.topPair){
+        var topPairValue = _.maxBy(filtered,x => x[0].value)[0].value;
+        var diceToSet = inactiveBonusDice.children[inactiveBonusDice.children.length - 1];
+        inactiveBonusDice.remove(diceToSet);
+        playerHand.add(diceToSet);
+        diceToSet.alpha = 1;
+        diceToSet.value = topPairValue;
+        diceToSet.frame = topPairValue - 1;
+        diceToSet.input.draggable = true;
+        jumpDieToCup(diceToSet,player);
+      }
+
+
+  }
+  }
+
 
 }
 
@@ -193,10 +257,17 @@ function getPlayableSpots(playerID){
   //  playableSpots.splice(playableSpots.indexOf([elem.col,elem.row]))
 });
 
+
+
 //add enemy board positions
 enemyBoard.forEach((elem) => {
   playableSpots[elem.pos] = 0;
 });
+
+if (placementStrategy === settingsConstants.placementStrategy.debug){
+  var i = 0;
+  for (i = 0; i < playableSpots.length; i++) playableSpots[i] = 1;
+}
   return playableSpots;
 }
 
@@ -215,6 +286,9 @@ function create() {
 
   blueDiceOnBoard = game.add.group();
   redDiceOnBoard = game.add.group();
+
+  redInactiveBonusDice = game.add.group();
+  blueInactiveBonusDice = game.add.group();
 
   //draw tiles
   var col,row;
@@ -262,16 +336,16 @@ function create() {
   var i = 0;
 
   //make redDice
-  for(i; i < playerDiceCount; i++)
+  for(i = 0; i < playerDiceCount; i++)
   {
     let pos = getRandomInsideBounds(cupRed.x,cupRed.y,cupWidth,cupHeight,diceDim);
-    let diceValue = rollDie();
     var dice = redDiceInHand.create(pos[0],pos[1],"redDice",diceValue - 1);
-
+    let diceValue = 1;
     dice.value = diceValue;
     dice.uniqueRef = "redDice"+i;
     dice.inputEnabled = true;
     dice.input.enableDrag();
+    dice.isBonus = false;
     dice.events.onDragStart.add(onDragStart, this);
     dice.events.onDragStop.add(onDragStop, this);
     dice.currentTween = null;
@@ -280,30 +354,41 @@ function create() {
     dice.rollAnimation = dice.animations.add("roll");
   }
 
-  let blueRollButton = endTurn = game.add.text(cupBlue.x + 20,cupBlue.y + 150, "ROLL",styleBlue);
-  blueRollButton.inputEnabled = true;
-  blueRollButton.events.onInputDown.add((evt) => {
-    reroll(1);
-  });
+  for (i = 0; i < playerBonusDiceCount; i++){
+    let pos = [cupRed.x + i * 86,cupRed.y + 100,cupWidth,cupHeight];
+    let diceValue = 1;
+    var dice = redInactiveBonusDice.create(pos[0],pos[1],"redBonusDice",diceValue - 1);
 
-  let redRollButton = endTurn = game.add.text(cupRed.x + 20,cupRed.y + 150, "ROLL",styleRed);
-  redRollButton.inputEnabled = true;
-  redRollButton.events.onInputDown.add((evt) => {
-    reroll(0);
-  });
+    dice.value = diceValue;
+    dice.uniqueRef = "redBonusDice"+i;
+    dice.isBonus = true;
+    dice.currentTween = null;
+    dice.unstopableTween = null;
+    dice.alpha = 0;
+    dice.inputEnabled = true;
+    dice.input.enableDrag();
+    dice.events.onDragStart.add(onDragStart, this);
+    dice.events.onDragStop.add(onDragStop, this);
+    dice.currentTween = null;
+    dice.unstopableTween = null;
+    dice.input.draggable = false;
+    dice.x = game.world.centerX - Math.floor(diceDim / 2);
+    dice.y = screenY;
+  }
 
   //make blueDice
   i = 0;
   for(i; i < playerDiceCount; i++)
   {
     let pos = getRandomInsideBounds(cupBlue.x,cupBlue.y,cupWidth,cupHeight,diceDim);
-    let diceValue = rollDie();
+    let diceValue = 1;
     var dice = blueDiceInHand.create(pos[0],pos[1],"blueDice",diceValue - 1);
 
     dice.value = diceValue;
     dice.uniqueRef = "blueDice"+i;
     dice.inputEnabled = true;
     dice.input.enableDrag();
+    dice.isBonus = false;
     dice.events.onDragStart.add(onDragStart, this);
     dice.events.onDragStop.add(onDragStop, this);
     dice.currentTween = null;
@@ -312,6 +397,32 @@ function create() {
 
     dice.rollAnimation = dice.animations.add("roll");
   }
+
+  for (i = 0; i < playerBonusDiceCount; i++){
+    let pos = [cupBlue.x + i * 86,cupBlue.y + 100,cupWidth,cupHeight];
+    let diceValue = 1
+    var dice = blueInactiveBonusDice.create(pos[0],pos[1],"blueBonusDice",diceValue - 1);
+
+    dice.value = diceValue;
+    dice.uniqueRef = "blueBonusDice"+i;
+    dice.isBonus = true;
+    dice.currentTween = null;
+    dice.unstopableTween = null;
+    dice.alpha = 0;
+    dice.inputEnabled = true;
+    dice.input.enableDrag();
+    dice.events.onDragStart.add(onDragStart, this);
+    dice.events.onDragStop.add(onDragStop, this);
+    dice.currentTween = null;
+    dice.unstopableTween = null;
+    dice.input.draggable = false;
+    dice.x = game.world.centerX - Math.floor(diceDim / 2);
+    dice.y = screenY;
+  }
+
+  reroll(0);
+
+
   //End Turn Button
   endTurn = game.add.text(game.world.centerX-10,screenY - cupHeight/2, "End Turn",styleRed);
   endTurn.inputEnabled = true;
@@ -591,9 +702,20 @@ function stopAndReturnToCup(sprite, whosCup){
   sprite.currentTween = null;
   sprite.parent.remove(sprite);
   if (sprite.uniqueRef.indexOf('blue') > -1){
+    if (sprite.isBonus){
+      sprite.alpha = 0;
+      blueInactiveBonusDice.add(sprite);
+    } else {
       blueDiceInHand.add(sprite);
+    }
+
   } else {
-    redDiceInHand.add(sprite);
+    if (sprite.isBonus){
+      sprite.alpha = 0;
+      redInactiveBonusDice.add(sprite);
+    } else {
+      redDiceInHand.add(sprite);
+    }
   }
   jumpDieToCup(sprite,whosCup);
 }
