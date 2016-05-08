@@ -73,6 +73,57 @@ var styleDraw = {
 var screenX = 1024;
 var screenY = 768;
 
+class MenuState extends Phaser.State{
+	preload(){
+		game.load.image('pufferfish', 'dist/images/pufferfish.png');
+		game.load.image('logo', 'dist/images/logo.png');
+		//Background
+		game.load.image('background', 'dist/images/wood.jpg');
+		game.load.image('cups', 'dist/images/cups.png');
+		game.load.image('cupsBlue', 'dist/images/cupsBlue.png');
+		//TilePieces
+		game.load.image('tileRed', 'dist/images/tileRed.png');
+		game.load.image('tileBlue', 'dist/images/tileBlue.png');
+		game.load.image('tileRedB', 'dist/images/tileRedB.png');
+		game.load.image('tileBlueB', 'dist/images/tileBlueB.png');
+		game.load.image('tileRedStart', 'dist/images/tileRedStart.png');
+		game.load.image('tileBlueStart', 'dist/images/tileBlueStart.png');
+		game.load.image('tileNeutral', 'dist/images/tileNeutral.png');
+		//dice
+		game.load.spritesheet('redDice', "dist/images/DieRed.png", 85, 85, 6);
+		game.load.spritesheet('blueDice', "dist/images/DieBlue.png", 85, 85, 6);
+		game.load.spritesheet('redBonusDice', "dist/images/DieGlassRed.png", 85, 85, 6);
+		game.load.spritesheet('blueBonusDice', "dist/images/DieGlassBlue.png", 85, 85, 6);
+		//targets
+		game.load.image('redTargets', 'dist/images/tileRedMove.png');
+		game.load.image('blueTargets', 'dist/images/tileBlueMove.png');
+		game.load.image('redTargetsB', 'dist/images/tileRedMoveB.png');
+		game.load.image('blueTargetsB', 'dist/images/tileBlueMoveB.png');
+
+		game.load.image('redPass','dist/images/RedPass.png');
+		game.load.image('bluePass','dist/images/BluePass.png');
+		game.load.image('whitePass','dist/images/RunBoard.png');
+
+		///Audio preloads
+		game.load.audio('error', 'dist/audio/159367__huminaatio__7-error.wav');
+		game.load.audio('roll', 'dist/audio/205821__mwirth__dice-on-a-wooden-floor.mp3');
+		game.load.audio('place', 'dist/audio/342707__spacejoe__lock-3-open-lock-2.wav');
+		game.load.audio('clash', 'dist/audio/213005__agaxly__shovel.wav');
+		game.load.audio('break', 'dist/audio/202093__spookymodem__bottle-shattering.wav');
+		game.load.audio('turn', 'dist/audio/118243__e-audio__column-gear-select-up-mono.wav');
+		game.load.audio('victory', 'dist/audio/336725__kubatko__inception-horn-victory.wav');
+	}
+
+	create(){
+		game.add.image(game.world.centerX,game.world.centerY,"logo");
+		game.add.image(game.world.centerX,game.world.centerY,"pufferfish");
+
+		var start = game.add.text(game.world.centerX, 30,"Click on red text to configure",{
+			font: "30px Arial", fill: "#fff"});
+			start.inputEnabled = true;
+			start.events.onInputDown.add(function() { game.state.start("Config"); });
+	}
+}
 
 class ConfigState extends Phaser.State {
 	init() {
@@ -305,41 +356,7 @@ class GameState extends Phaser.State {
 	}
 
 	preload() {
-		//Background
-		game.load.image('background', 'dist/images/wood.jpg');
-		game.load.image('cups', 'dist/images/cups.png');
-		game.load.image('cupsBlue', 'dist/images/cupsBlue.png');
-		//TilePieces
-		game.load.image('tileRed', 'dist/images/tileRed.png');
-		game.load.image('tileBlue', 'dist/images/tileBlue.png');
-		game.load.image('tileRedB', 'dist/images/tileRedB.png');
-		game.load.image('tileBlueB', 'dist/images/tileBlueB.png');
-		game.load.image('tileRedStart', 'dist/images/tileRedStart.png');
-		game.load.image('tileBlueStart', 'dist/images/tileBlueStart.png');
-		game.load.image('tileNeutral', 'dist/images/tileNeutral.png');
-		//dice
-		game.load.spritesheet('redDice', "dist/images/DieRed.png", 85, 85, 6);
-		game.load.spritesheet('blueDice', "dist/images/DieBlue.png", 85, 85, 6);
-		game.load.spritesheet('redBonusDice', "dist/images/DieGlassRed.png", 85, 85, 6);
-		game.load.spritesheet('blueBonusDice', "dist/images/DieGlassBlue.png", 85, 85, 6);
-		//targets
-		game.load.image('redTargets', 'dist/images/tileRedMove.png');
-		game.load.image('blueTargets', 'dist/images/tileBlueMove.png');
-		game.load.image('redTargetsB', 'dist/images/tileRedMoveB.png');
-		game.load.image('blueTargetsB', 'dist/images/tileBlueMoveB.png');
 
-		game.load.image('redPass','dist/images/RedPass.png');
-		game.load.image('bluePass','dist/images/BluePass.png');
-		game.load.image('whitePass','dist/images/RunBoard.png');
-
-		///Audio preloads
-		game.load.audio('error', 'dist/audio/159367__huminaatio__7-error.wav');
-		game.load.audio('roll', 'dist/audio/205821__mwirth__dice-on-a-wooden-floor.mp3');
-		game.load.audio('place', 'dist/audio/342707__spacejoe__lock-3-open-lock-2.wav');
-		game.load.audio('clash', 'dist/audio/213005__agaxly__shovel.wav');
-		game.load.audio('break', 'dist/audio/202093__spookymodem__bottle-shattering.wav');
-		game.load.audio('turn', 'dist/audio/118243__e-audio__column-gear-select-up-mono.wav');
-		game.load.audio('victory', 'dist/audio/336725__kubatko__inception-horn-victory.wav');
 	}
 	setText(text) {
 		text.setText("- You have clicked -\n" + store.getState().appstate + " times !");
@@ -1030,7 +1047,7 @@ areDiceOnBoard(){
 	}, 1000, Phaser.Easing.Quadratic.Out, true, 0, -1, true);
 	var restart = game.add.text(game.world.centerX, game.world.centerY + 100,"RESTART", smallStyle);
 	restart.inputEnabled = true;
-	restart.events.onInputDown.add(function() { game.state.start("Game"); });
+	restart.events.onInputDown.add(function() { game.state.start("Config"); });
 	this.victorySound.play();
 }
 
@@ -1114,6 +1131,7 @@ moveBonusDiceSomewhereLessAnnoying(dice){
 
 var game = new Phaser.Game(screenX, screenY, Phaser.Canvas, 'cube-party');
 
+game.state.add("Menu",MenuState,false);
 game.state.add("Game",GameState,false);
 game.state.add("Config",ConfigState,false);
-game.state.start("Config");
+game.state.start("Menu");
