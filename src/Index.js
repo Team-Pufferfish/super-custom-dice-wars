@@ -20,7 +20,7 @@ var settingsConstants = {
 		afterRound: "after each round",
 		beforeTurn: "before each player's turn"
 	},
-	diceRollCount: [3,4,5],
+	diceRollCount: [3,4,5,6,7],
 	boardColumnCount: [4,6,8],
 	boardRowCount: [2,3,4],
 
@@ -78,10 +78,10 @@ class ConfigState extends Phaser.State {
 	init() {
 		this.selectedConfiguration = {
 			placementStrategy: "behindAny",
-			movementStrategy: "afterTurn",
+			movementStrategy: "afterRound",
 			rollDiceStrategy: "beforeTurn",
 			diceRollCount: 4,
-			bonusDiceGenerationStrategy: "topTwoPair",
+			bonusDiceGenerationStrategy: "topPair",
 			bonusDiceCount: 2,
 			bonusDiceDestructionStrategy: "afterReroll",
 			boardColumnCount: 6,
@@ -832,10 +832,10 @@ areDiceOnBoard(){
 		//  var available = redTargets.filter(x => spots[x.pos] === 1);
 
 
-		this.redTargets.filter(x => spots[x.pos] === 1).list.forEach(x => x.alpha = 0.5);
+		this.redTargets.filter(x => spots[x.pos] === 1).list.forEach(x => x.alpha = 0.8);
 
 	} else {
-		this.blueTargets.filter(x => spots[x.pos] === 1).list.forEach(x => x.alpha = 0.5);
+		this.blueTargets.filter(x => spots[x.pos] === 1).list.forEach(x => x.alpha = 0.8);
 	}
 }
 

@@ -26,6 +26,8 @@ import ghPages from 'gulp-gh-pages';
 const paths = {
   bundle: 'app.js',
   entry: 'src/Index.js',
+  srcAudio: 'src/audio/**',
+  distAudio: 'dist/audio',
   srcCss: 'src/**/*.scss',
   srcImg: 'src/images/**',
   srcLint: ['src/**/*.js', 'test/**/*.js'],
@@ -113,6 +115,16 @@ gulp.task('images', () => {
     .pipe(gulp.dest(paths.distImg));
 });
 
+gulp.task('audio', () => {
+  gulp.src(paths.srcAudio)
+    .pipe(imagemin({
+      progressive: true,
+      svgoPlugins: [{ removeViewBox: false }],
+      use: [pngquant()]
+    }))
+    .pipe(gulp.dest(paths.distAudio));
+});
+
 
 gulp.task('watchTask', () => {
   gulp.watch(paths.srcCss, ['styles']);
@@ -124,10 +136,10 @@ gulp.task('deploy', () => {
 });
 
 gulp.task('watch', cb => {
-  runSequence('clean', ['browserSync', 'watchTask', 'watchify', 'styles', 'images'], cb);
+  runSequence('clean', ['browserSync', 'watchTask', 'watchify', 'styles', 'images','audio'], cb);
 });
 
 gulp.task('build', cb => {
   process.env.NODE_ENV = 'production';
-  runSequence('clean', ['browserify', 'styles', 'htmlReplace', 'images'], cb);
+  runSequence('clean', ['browserify', 'styles', 'htmlReplace', 'images','audio'], cb);
 });
