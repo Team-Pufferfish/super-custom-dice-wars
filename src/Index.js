@@ -208,7 +208,7 @@ class GameState extends Phaser.State {
 				diceToSet.alpha = 1;
 				diceToSet.value = topPairValue;
 				diceToSet.frame = topPairValue - 1;
-				diceToSet.input.draggable = true;
+				if(player === this.player) diceToSet.input.draggable = true;
 				this.jumpDieToCup(diceToSet, player);
 			}
 
