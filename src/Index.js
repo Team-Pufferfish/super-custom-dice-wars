@@ -59,7 +59,7 @@ function preload(){
   game.load.spritesheet('blueDice',"dist/images/DieBlue.png",85,85,6);
   //targets
   game.load.image('redTargets','dist/images/tileRedMove.png');
-  game.load.image('blueTargets','dist/images/tileRedBlue.png');
+  game.load.image('blueTargets','dist/images/tileBlueMove.png');
 }
 
 var background;
